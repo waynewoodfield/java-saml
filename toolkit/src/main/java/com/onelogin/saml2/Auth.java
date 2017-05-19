@@ -240,8 +240,8 @@ public class Auth {
 	/**
 	 * Initiates the SSO process.
 	 *
-	 * @param returnTo
-	 *				The target URL the user should be returned to after login (relayState).
+	 * @param relayState
+	 *				The RelayState parameter to send with your SAMLRequest.
 	 *				Will be a self-routed URL when null, or not be appended at all when an empty string is provided
 	 * @param forceAuthn
 	 *				When true the AuthNRequest will set the ForceAuthn='true'
@@ -257,7 +257,7 @@ public class Auth {
 	 * @throws IOException
 	 * @throws SettingsException
 	 */
-	public String login(String returnTo, Boolean forceAuthn, Boolean isPassive, Boolean setNameIdPolicy, Boolean stay) throws IOException, SettingsException {
+	public String login(String relayState, Boolean forceAuthn, Boolean isPassive, Boolean setNameIdPolicy, Boolean stay) throws IOException, SettingsException {
 		Map<String, String> parameters = new HashMap<String, String>();
 
 		AuthnRequest authnRequest = new AuthnRequest(settings, forceAuthn, isPassive, setNameIdPolicy);
@@ -266,11 +266,8 @@ public class Auth {
 		
 		parameters.put("SAMLRequest", samlRequest);
 
-		String relayState;
-		if (returnTo == null) {
+		if (relayState == null) {
 			relayState = ServletUtils.getSelfRoutedURLNoQuery(request);
-		} else {
-			relayState = returnTo;
 		}
 
 		if (!relayState.isEmpty()) {
@@ -298,8 +295,8 @@ public class Auth {
 	/**
 	 * Initiates the SSO process.
 	 *
-	 * @param returnTo
-	 *				The target URL the user should be returned to after login (relayState).
+	 * @param relayState
+	 *				The RelayState parameter to send with your SAMLRequest.
 	 *				Will be a self-routed URL when null, or not be appended at all when an empty string is provided
 	 * @param forceAuthn
 	 *				When true the AuthNRequest will set the ForceAuthn='true'
@@ -311,8 +308,8 @@ public class Auth {
 	 * @throws IOException
 	 * @throws SettingsException
 	 */
-	public void login(String returnTo, Boolean forceAuthn, Boolean isPassive, Boolean setNameIdPolicy) throws IOException, SettingsException {
-		login(returnTo ,forceAuthn, isPassive, setNameIdPolicy, false);
+	public void login(String relayState, Boolean forceAuthn, Boolean isPassive, Boolean setNameIdPolicy) throws IOException, SettingsException {
+		login(relayState,forceAuthn, isPassive, setNameIdPolicy, false);
 	}
 		
 	/**
@@ -328,15 +325,15 @@ public class Auth {
 	/**
 	 * Initiates the SSO process.
 	 *
-	 * @param returnTo 
-     *				The target URL the user should be returned to after login (relayState).
+	 * @param relayState
+	 *				The RelayState parameter to send with your SAMLRequest.
 	 *				Will be a self-routed URL when null, or not be appended at all when an empty string is provided.
-     *
+	 *
 	 * @throws IOException
 	 * @throws SettingsException
 	 */
-	public void login(String returnTo) throws IOException, SettingsException {
-		login(returnTo ,false, false, true);
+	public void login(String relayState) throws IOException, SettingsException {
+		login(relayState,false, false, true);
 	}
 
 	/**
@@ -819,8 +816,8 @@ public class Auth {
 	/**
 	 * Generates the Signature for a SAML Response
 	 *
-	 * @param samlResponse
-	 *				The SAML Response
+	 * @param samlMessage
+	 *				The SAML Message
 	 * @param relayState
 	 *				The RelayState
 	 * @param signAlgorithm
