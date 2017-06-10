@@ -1,6 +1,5 @@
-<%@page import="java.util.*,com.onelogin.saml2.Auth,com.onelogin.saml2.settings.Saml2Settings" language="java" contentType="application/xhtml+xml"%><%
-Auth auth = new Auth();
-Saml2Settings settings = auth.getSettings();
+<%@page import="java.util.*,com.onelogin.saml2.settings.*" language="java" contentType="application/xhtml+xml"%><%
+Saml2Settings settings = new SettingsBuilder().fromFile("onelogin.saml.properties").build();
 String metadata = settings.getSPMetadata();
 List<String> errors = Saml2Settings.validateMetadata(metadata);
 if (errors.isEmpty()) {
