@@ -1,11 +1,13 @@
 # OneLogin's SAML Java Toolkit
 
-[![Build Status](https://travis-ci.org/onelogin/java-saml.svg?branch=v2.0.0)](https://travis-ci.org/onelogin/java-saml) [![Coverage Status](https://coveralls.io/repos/github/onelogin/java-saml/badge.svg?branch=v2.0.0)](https://coveralls.io/github/onelogin/java-saml?branch=v2.0.0)
+[![Build Status](https://travis-ci.org/onelogin/java-saml.svg?branch=master)](https://travis-ci.org/onelogin/java-saml) [![Coverage Status](https://coveralls.io/repos/github/onelogin/java-saml/badge.svg?branch=master)](https://coveralls.io/github/onelogin/java-saml?branch=master)
 
 Add SAML support to your Java applications using this library.
 Forget those complicated libraries and use that open source library provided and supported by OneLogin Inc.
 
-This is version 2.0.0, compatible with java6 / java7 / java8.
+Version 2.X.X, compatible with java7 / java8.
+
+We [introduced some incompatibilities](https://github.com/onelogin/java-saml/issues/90), that could be fixed and make it compatible with java6.
 
 Version 1.1.2 is considered to be deprecated. If you have used it, we strongly recommend that you migrate to the new version. 
 We rebuilt the toolkit on 2.0.0, so code/settings that you had been using in the previous version will no longer be compatible.
@@ -329,6 +331,7 @@ onelogin.saml2.security.signature_algorithm = http://www.w3.org/2000/09/xmldsig#
 onelogin.saml2.organization.name = SP Java 
 onelogin.saml2.organization.displayname = SP Java Example
 onelogin.saml2.organization.url = http://sp.example.com
+onelogin.saml2.organization.lang = en
 
 # Contacts
 onelogin.saml2.contacts.technical.given_name = Technical Guy
