@@ -71,6 +71,7 @@ public class Saml2Settings {
 	private Boolean wantXMLValidation = true;
 	private String signatureAlgorithm = Constants.RSA_SHA1;
 	private boolean rejectUnsolicitedResponsesWithInResponseTo = false;
+	private int allowedClockDrift = 180; // Default value is 3 min
 
 	// Compress
 	private Boolean compressRequest = true;
@@ -681,6 +682,14 @@ public class Saml2Settings {
 
 	public boolean isRejectUnsolicitedResponsesWithInResponseTo() {
 		return rejectUnsolicitedResponsesWithInResponseTo;
+	}
+
+	public int getAllowedClockDrift() {
+		return allowedClockDrift;
+	}
+
+	public void setAllowedClockDrift(int allowedClockDrift) {
+		this.allowedClockDrift = allowedClockDrift;
 	}
 
 	/**

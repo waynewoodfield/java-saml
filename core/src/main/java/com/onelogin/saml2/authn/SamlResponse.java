@@ -273,7 +273,7 @@ public class SamlResponse {
 				// Check the session Expiration
 				DateTime sessionExpiration = this.getSessionNotOnOrAfter();
 				if (sessionExpiration != null) {
-					sessionExpiration = sessionExpiration.plus(Constants.ALOWED_CLOCK_DRIFT * 1000);
+					sessionExpiration = sessionExpiration.plus(settings.getAllowedClockDrift() * 1000);
 					if (sessionExpiration.isEqualNow() || sessionExpiration.isBeforeNow()) {
 						throw new ValidationError("The attributes have expired, based on the SessionNotOnOrAfter of the AttributeStatement of this Response", ValidationError.SESSION_EXPIRED);
 					}
@@ -367,7 +367,7 @@ public class SamlResponse {
 					}
 
 					DateTime noa = Util.parseDateTime(notOnOrAfter.getNodeValue());
-					noa = noa.plus(Constants.ALOWED_CLOCK_DRIFT * 1000);
+					noa = noa.plus(settings.getAllowedClockDrift() * 1000);
 					if (noa.isEqualNow() || noa.isBeforeNow()) {
 						validationIssues.add(new SubjectConfirmationIssue(i, "SubjectConfirmationData is no longer valid"));
 						continue;
@@ -376,7 +376,7 @@ public class SamlResponse {
 					Node notBefore = subjectConfirmationDataNodes.item(c).getAttributes().getNamedItem("NotBefore");
 					if (notBefore != null) {
 						DateTime nb = Util.parseDateTime(notBefore.getNodeValue());
-						nb = nb.minus(Constants.ALOWED_CLOCK_DRIFT * 1000);
+						nb = nb.minus(settings.getAllowedClockDrift() * 1000);
 						if (nb.isAfterNow()) {
 							validationIssues.add(new SubjectConfirmationIssue(i, "SubjectConfirmationData is not yet valid"));
 							continue;
@@ -928,7 +928,7 @@ public class SamlResponse {
 				// validate NotOnOrAfter
 				if (naAttribute != null) {
 					DateTime notOnOrAfterDate = Util.parseDateTime(naAttribute.getNodeValue());
-					notOnOrAfterDate = notOnOrAfterDate.plus(Constants.ALOWED_CLOCK_DRIFT * 1000);
+					notOnOrAfterDate = notOnOrAfterDate.plus(settings.getAllowedClockDrift() * 1000);
 					if (notOnOrAfterDate.isEqualNow() || notOnOrAfterDate.isBeforeNow()) {
 						throw new ValidationError("Could not validate timestamp: expired. Check system clock.", ValidationError.ASSERTION_EXPIRED);
 					}
@@ -936,7 +936,7 @@ public class SamlResponse {
 				// validate NotBefore
 				if (nbAttribute != null) {
 					DateTime notBeforeDate = Util.parseDateTime(nbAttribute.getNodeValue());
-					notBeforeDate = notBeforeDate.minus(Constants.ALOWED_CLOCK_DRIFT * 1000);
+					notBeforeDate = notBeforeDate.minus(settings.getAllowedClockDrift() * 1000);
 					if (notBeforeDate.isAfterNow()) {
 						throw new ValidationError("Could not validate timestamp: not yet valid. Check system clock.", ValidationError.ASSERTION_TOO_EARLY);
 					}

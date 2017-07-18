@@ -84,6 +84,7 @@ public class SettingsBuilder {
 	public final static String SECURITY_WANT_XML_VALIDATION = "onelogin.saml2.security.want_xml_validation";
 	public final static String SECURITY_SIGNATURE_ALGORITHM = "onelogin.saml2.security.signature_algorithm";
 	public final static String SECURITY_REJECT_UNSOLICITED_RESPONSES_WITH_INRESPONSETO = "onelogin.saml2.security.reject_unsolicited_responses_with_inresponseto";
+	public final static String SECURITY_ALLOWED_CLOCK_DRIFT = "onelogin.saml2.security.allowedClockDrift";
 
 	// Compress
 	public final static String COMPRESS_REQUEST = "onelogin.saml2.compress.request";
@@ -299,6 +300,10 @@ public class SettingsBuilder {
 		if (rejectUnsolicitedResponsesWithInResponseTo != null) {
 			saml2Setting.setRejectUnsolicitedResponsesWithInResponseTo(rejectUnsolicitedResponsesWithInResponseTo);
 		}
+
+		Integer allowedClockDrift = loadIntegerProperty(SECURITY_ALLOWED_CLOCK_DRIFT);
+		if (allowedClockDrift != null)
+			saml2Setting.setAllowedClockDrift(allowedClockDrift);
 	}
 
 	/**
@@ -410,6 +415,26 @@ public class SettingsBuilder {
 			propValue = propValue.trim();
 		}
 		return propValue;
+	}
+
+	/**
+	 * Loads a property of the type Integer from the Properties object
+	 *
+	 * @param propertyKey
+	 *            the property name
+	 *
+	 * @return the Integer value, or null if not parsable as an Integer
+	 */
+	private Integer loadIntegerProperty(String propertyKey) {
+		String propValue = prop.getProperty(propertyKey);
+		if (propValue != null) {
+			try {
+				return new Integer(propValue);
+			} catch (NumberFormatException e) {
+				return null;
+			}
+		}
+		return null;
 	}
 
 	/**
