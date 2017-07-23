@@ -312,7 +312,7 @@ public class Metadata {
 				keyDescriptorXml.append("</ds:KeyInfo>");
 				keyDescriptorXml.append("</md:KeyDescriptor>");
 			}
-			if (settings.getWantAssertionsEncrypted()) {
+			if (settings.getWantAssertionsEncrypted() || settings.getWantNameIdEncrypted()) {
 				keyDescriptorXml.append("<md:KeyDescriptor use=\"encryption\">");
 				keyDescriptorXml.append("<ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">");
 				keyDescriptorXml.append("<ds:X509Data>");
