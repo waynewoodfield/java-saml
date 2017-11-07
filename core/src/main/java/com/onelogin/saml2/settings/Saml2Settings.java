@@ -359,7 +359,7 @@ public class Saml2Settings {
 	 * @param spEntityId
 	 *            the spEntityId value to be set
 	 */
-	protected final void setSpEntityId(String spEntityId) {
+	public final void setSpEntityId(String spEntityId) {
 		this.spEntityId = spEntityId;
 	}
 
@@ -369,7 +369,7 @@ public class Saml2Settings {
 	 * @param spAssertionConsumerServiceUrl
 	 *            the spAssertionConsumerServiceUrl value to be set
 	 */
-	protected final void setSpAssertionConsumerServiceUrl(URL spAssertionConsumerServiceUrl) {
+	public final void setSpAssertionConsumerServiceUrl(URL spAssertionConsumerServiceUrl) {
 		this.spAssertionConsumerServiceUrl = spAssertionConsumerServiceUrl;
 	}
 
@@ -379,7 +379,7 @@ public class Saml2Settings {
 	 * @param spAssertionConsumerServiceBinding
 	 *            the spAssertionConsumerServiceBinding value to be set
 	 */
-	protected final void setSpAssertionConsumerServiceBinding(String spAssertionConsumerServiceBinding) {
+	public final void setSpAssertionConsumerServiceBinding(String spAssertionConsumerServiceBinding) {
 		this.spAssertionConsumerServiceBinding = spAssertionConsumerServiceBinding;
 	}
 
@@ -389,7 +389,7 @@ public class Saml2Settings {
 	 * @param spSingleLogoutServiceUrl
 	 *            the spSingleLogoutServiceUrl value to be set
 	 */
-	protected final void setSpSingleLogoutServiceUrl(URL spSingleLogoutServiceUrl) {
+	public final void setSpSingleLogoutServiceUrl(URL spSingleLogoutServiceUrl) {
 		this.spSingleLogoutServiceUrl = spSingleLogoutServiceUrl;
 	}
 
@@ -399,7 +399,7 @@ public class Saml2Settings {
 	 * @param spSingleLogoutServiceBinding
 	 *            the spSingleLogoutServiceBinding value to be set
 	 */
-	protected final void setSpSingleLogoutServiceBinding(String spSingleLogoutServiceBinding) {
+	public final void setSpSingleLogoutServiceBinding(String spSingleLogoutServiceBinding) {
 		this.spSingleLogoutServiceBinding = spSingleLogoutServiceBinding;
 	}
 
@@ -409,7 +409,7 @@ public class Saml2Settings {
 	 * @param spNameIDFormat
 	 *            the spNameIDFormat value to be set
 	 */
-	protected final void setSpNameIDFormat(String spNameIDFormat) {
+	public final void setSpNameIDFormat(String spNameIDFormat) {
 		this.spNameIDFormat = spNameIDFormat;
 	}
 
@@ -419,7 +419,7 @@ public class Saml2Settings {
 	 * @param spX509cert
 	 *            the spX509cert value to be set in X509Certificate format
 	 */
-	protected final void setSpX509cert(X509Certificate spX509cert) {
+	public final void setSpX509cert(X509Certificate spX509cert) {
 		this.spX509cert = spX509cert;
 	}
 
@@ -429,7 +429,7 @@ public class Saml2Settings {
 	 * @param spPrivateKey
 	 *            the spprivateKey value to be set in PrivateKey format
 	 */
-	protected final void setSpPrivateKey(PrivateKey spPrivateKey) {
+	public final void setSpPrivateKey(PrivateKey spPrivateKey) {
 		this.spPrivateKey = spPrivateKey;
 	}
 
@@ -439,7 +439,7 @@ public class Saml2Settings {
 	 * @param idpEntityId
 	 *            the idpEntityId value to be set
 	 */
-	protected final void setIdpEntityId(String idpEntityId) {
+	public final void setIdpEntityId(String idpEntityId) {
 		this.idpEntityId = idpEntityId;
 	}
 
@@ -449,7 +449,7 @@ public class Saml2Settings {
 	 * @param idpSingleSignOnServiceUrl
 	 *            the idpSingleSignOnServiceUrl value to be set
 	 */
-	protected final void setIdpSingleSignOnServiceUrl(URL idpSingleSignOnServiceUrl) {
+	public final void setIdpSingleSignOnServiceUrl(URL idpSingleSignOnServiceUrl) {
 		this.idpSingleSignOnServiceUrl = idpSingleSignOnServiceUrl;
 	}
 
@@ -459,7 +459,7 @@ public class Saml2Settings {
 	 * @param idpSingleSignOnServiceBinding
 	 *            the idpSingleSignOnServiceBinding value to be set
 	 */
-	protected final void setIdpSingleSignOnServiceBinding(String idpSingleSignOnServiceBinding) {
+	public final void setIdpSingleSignOnServiceBinding(String idpSingleSignOnServiceBinding) {
 		this.idpSingleSignOnServiceBinding = idpSingleSignOnServiceBinding;
 	}
 
@@ -469,7 +469,7 @@ public class Saml2Settings {
 	 * @param idpSingleLogoutServiceUrl
 	 *            the idpSingleLogoutServiceUrl value to be set
 	 */
-	protected final void setIdpSingleLogoutServiceUrl(URL idpSingleLogoutServiceUrl) {
+	public final void setIdpSingleLogoutServiceUrl(URL idpSingleLogoutServiceUrl) {
 		this.idpSingleLogoutServiceUrl = idpSingleLogoutServiceUrl;
 	}
 
@@ -479,7 +479,7 @@ public class Saml2Settings {
 	 * @param idpSingleLogoutServiceResponseUrl
 	 *            the idpSingleLogoutServiceUrl value to be set
 	 */
-	protected final void setIdpSingleLogoutServiceResponseUrl(URL idpSingleLogoutServiceResponseUrl) {
+	public final void setIdpSingleLogoutServiceResponseUrl(URL idpSingleLogoutServiceResponseUrl) {
 			this.idpSingleLogoutServiceResponseUrl = idpSingleLogoutServiceResponseUrl;
 	}
 
@@ -490,7 +490,7 @@ public class Saml2Settings {
 	 * @param idpSingleLogoutServiceBinding
 	 *            the idpSingleLogoutServiceBinding value to be set
 	 */
-	protected final void setIdpSingleLogoutServiceBinding(String idpSingleLogoutServiceBinding) {
+	public final void setIdpSingleLogoutServiceBinding(String idpSingleLogoutServiceBinding) {
 		this.idpSingleLogoutServiceBinding = idpSingleLogoutServiceBinding;
 	}
 
@@ -500,7 +500,7 @@ public class Saml2Settings {
 	 * @param idpX509cert
 	 *            the idpX509cert value to be set in X509Certificate format
 	 */
-	protected final void setIdpx509cert(X509Certificate idpX509cert) {
+	public final void setIdpx509cert(X509Certificate idpX509cert) {
 		this.idpx509cert = idpX509cert;
 	}
 
@@ -510,7 +510,7 @@ public class Saml2Settings {
 	 * @param idpCertFingerprint
 	 *            the idpCertFingerprint value to be set
 	 */
-	protected final void setIdpCertFingerprint(String idpCertFingerprint) {
+	public final void setIdpCertFingerprint(String idpCertFingerprint) {
 		this.idpCertFingerprint = idpCertFingerprint;
 	}
 
@@ -520,7 +520,7 @@ public class Saml2Settings {
 	 * @param idpCertFingerprintAlgorithm
 	 *            the idpCertFingerprintAlgorithm value to be set.
 	 */
-	protected final void setIdpCertFingerprintAlgorithm(String idpCertFingerprintAlgorithm) {
+	public final void setIdpCertFingerprintAlgorithm(String idpCertFingerprintAlgorithm) {
 		this.idpCertFingerprintAlgorithm = idpCertFingerprintAlgorithm;
 	}
 
