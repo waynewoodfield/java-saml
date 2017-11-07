@@ -213,7 +213,7 @@ public class LogoutResponse {
 				if (rootElement.hasAttribute("Destination")) {
 					String destinationUrl = rootElement.getAttribute("Destination");
 					if (destinationUrl != null) {
-						if (!destinationUrl.isEmpty() && !destinationUrl.equals(currentUrl)) {
+						if (!destinationUrl.isEmpty() && !destinationUrl.equals(currentUrl) && settings.isValidateRecipient()) {
 							throw new ValidationError("The LogoutResponse was received at " + currentUrl + " instead of "
 									+ destinationUrl, ValidationError.WRONG_DESTINATION);
 						}
