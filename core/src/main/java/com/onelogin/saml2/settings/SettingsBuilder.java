@@ -50,7 +50,8 @@ public class SettingsBuilder {
 	public final static String SP_ASSERTION_CONSUMER_SERVICE_URL_PROPERTY_KEY = "onelogin.saml2.sp.assertion_consumer_service.url";
 	public final static String SP_ASSERTION_CONSUMER_SERVICE_BINDING_PROPERTY_KEY = "onelogin.saml2.sp.assertion_consumer_service.binding";
 	public final static String SP_SINGLE_LOGOUT_SERVICE_URL_PROPERTY_KEY = "onelogin.saml2.sp.single_logout_service.url";
-	public final static String SP_SINGLE_LOGOUT_SERVICE_BINDING_PROPERTY_KEY = "onelogin.saml2.sp.single_logout_service.binding";
+	public final static String SP_SINGLE_LOGOUT_SERVICE_BINDING_REDIRECT_PROPERTY_KEY = "onelogin.saml2.sp.single_logout_service.binding.redirect";
+	public final static String SP_SINGLE_LOGOUT_SERVICE_BINDING_POST_PROPERTY_KEY = "onelogin.saml2.sp.single_logout_service.binding.post";
 	public final static String SP_NAMEIDFORMAT_PROPERTY_KEY = "onelogin.saml2.sp.nameidformat";
 
 	public final static String SP_X509CERT_PROPERTY_KEY = "onelogin.saml2.sp.x509cert";
@@ -394,9 +395,13 @@ public class SettingsBuilder {
 		if (spSingleLogoutServiceUrl != null)
 			saml2Setting.setSpSingleLogoutServiceUrl(spSingleLogoutServiceUrl);
 
-		String spSingleLogoutServiceBinding = loadStringProperty(SP_SINGLE_LOGOUT_SERVICE_BINDING_PROPERTY_KEY);
-		if (spSingleLogoutServiceBinding != null)
-			saml2Setting.setSpSingleLogoutServiceBinding(spSingleLogoutServiceBinding);
+		Boolean spSingleLogoutServiceBindingRedirect = loadBooleanProperty(SP_SINGLE_LOGOUT_SERVICE_BINDING_REDIRECT_PROPERTY_KEY);
+		if (spSingleLogoutServiceBindingRedirect != null)
+			saml2Setting.setSpSingleLogoutServiceBindingRedirect(spSingleLogoutServiceBindingRedirect);
+
+		Boolean spSingleLogoutServiceBindingPost = loadBooleanProperty(SP_SINGLE_LOGOUT_SERVICE_BINDING_POST_PROPERTY_KEY);
+		if (spSingleLogoutServiceBindingPost != null)
+			saml2Setting.setSpSingleLogoutServiceBindingPost(spSingleLogoutServiceBindingPost);
 
 		String spNameIDFormat = loadStringProperty(SP_NAMEIDFORMAT_PROPERTY_KEY);
 		if (spNameIDFormat != null && !spNameIDFormat.isEmpty())

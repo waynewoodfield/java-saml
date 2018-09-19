@@ -39,7 +39,8 @@ public class Saml2Settings {
 	private URL spAssertionConsumerServiceUrl = null;
 	private String spAssertionConsumerServiceBinding = Constants.BINDING_HTTP_POST;
 	private URL spSingleLogoutServiceUrl = null;
-	private String spSingleLogoutServiceBinding = Constants.BINDING_HTTP_REDIRECT;
+	private boolean spSingleLogoutServiceBindingRedirect = true;
+	private boolean spSingleLogoutServiceBindingPost = true;
 	private String spNameIDFormat = Constants.NAMEID_UNSPECIFIED;
 	private X509Certificate spX509cert = null;
 	private PrivateKey spPrivateKey = null;
@@ -122,8 +123,12 @@ public class Saml2Settings {
 	/**
 	 * @return the spSingleLogoutServiceBinding setting value
 	 */
-	public final String getSpSingleLogoutServiceBinding() {
-		return spSingleLogoutServiceBinding;
+	public final boolean isSpSingleLogoutServiceBindingRedirect() {
+		return spSingleLogoutServiceBindingRedirect;
+	}
+
+	public final boolean isSpSingleLogoutServiceBindingPost() {
+		return spSingleLogoutServiceBindingPost;
 	}
 
 	/**
@@ -394,13 +399,21 @@ public class Saml2Settings {
 	}
 
 	/**
-	 * Set the spSingleLogoutServiceBinding setting value
+	 * Set the spSingleLogoutServiceBindingRedirect setting value
 	 *
-	 * @param spSingleLogoutServiceBinding
-	 *            the spSingleLogoutServiceBinding value to be set
+	 * @param spSingleLogoutServiceBindingRedirect
 	 */
-	public final void setSpSingleLogoutServiceBinding(String spSingleLogoutServiceBinding) {
-		this.spSingleLogoutServiceBinding = spSingleLogoutServiceBinding;
+	public final void setSpSingleLogoutServiceBindingRedirect(boolean spSingleLogoutServiceBindingRedirect) {
+		this.spSingleLogoutServiceBindingRedirect = spSingleLogoutServiceBindingRedirect;
+	}
+
+	/**
+	 * Set the spSingleLogoutServiceBindingPost setting value
+	 *
+	 * @param spSingleLogoutServiceBindingPost
+	 */
+	public final void setSpSingleLogoutServiceBindingPost(boolean spSingleLogoutServiceBindingPost) {
+		this.spSingleLogoutServiceBindingPost = spSingleLogoutServiceBindingPost;
 	}
 
 	/**

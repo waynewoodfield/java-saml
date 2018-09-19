@@ -37,7 +37,7 @@ public class LogoutResponse {
 	/**
 	 * SAML LogoutResponse string
 	 */
-	private String logoutResponseString;	
+	private String logoutResponseString;
 
 	/**
 	 * A DOMDocument object loaded from the SAML Response.
@@ -76,7 +76,7 @@ public class LogoutResponse {
 
 	/**
 	 * After validation, if it fails this property has the cause of the problem
-	 */ 
+	 */
 	private String error;
 
 	/**
@@ -91,14 +91,14 @@ public class LogoutResponse {
 	public LogoutResponse(Saml2Settings settings, HttpRequest request) {
 		this.settings = settings;
 		this.request = request;
-		
+
 		String samlLogoutResponse = null;
 		if (request != null) {
 			currentUrl = request.getRequestURL();
 			samlLogoutResponse = request.getParameter("SAMLResponse");
 		}
 
-		if (samlLogoutResponse != null && !samlLogoutResponse.isEmpty()) {	
+		if (samlLogoutResponse != null && !samlLogoutResponse.isEmpty()) {
 			logoutResponseString = Util.base64decodedInflated(samlLogoutResponse);
 			logoutResponseDocument = Util.loadXML(logoutResponseString);
 		}
@@ -107,10 +107,10 @@ public class LogoutResponse {
 	/**
 	 * @return the base64 encoded unsigned Logout Response (deflated or not)
 	 *
-	 * @param deflated 
+	 * @param deflated
      *				If deflated or not the encoded Logout Response
      *
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public String getEncodedLogoutResponse(Boolean deflated) throws IOException {
 		String encodedLogoutResponse;
@@ -124,11 +124,11 @@ public class LogoutResponse {
 		}
 		return encodedLogoutResponse;
 	}
-	
+
 	/**
 	 * @return the base64 encoded, unsigned Logout Response (deflated or not)
 	 *
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public String getEncodedLogoutResponse() throws IOException {
 		return getEncodedLogoutResponse(null);
@@ -174,9 +174,9 @@ public class LogoutResponse {
 				throw new Exception("The URL of the current host was not established");
 			}
 
-			String signature = request.getParameter("Signature");
+			String signature = settings.isSpSingleLogoutServiceBindingRedirect() ? request.getParameter("Signature") : null;
 			boolean hasSignedResponse = false;
-			if (signature == null)
+			if (signature == null && settings.isSpSingleLogoutServiceBindingPost())
 			{
 				List<String> signedElements = processSignedElements();
 				String responseTag = "{" + Constants.NS_SAMLP + "}LogoutResponse";
@@ -185,7 +185,7 @@ public class LogoutResponse {
 
 			if (settings.isStrict()) {
 				Element rootElement = logoutResponseDocument.getDocumentElement();
-				rootElement.normalize();				
+				rootElement.normalize();
 
 				if (settings.getWantXMLValidation()) {
 					if (!Util.validateXML(this.logoutResponseDocument, SchemaFactory.SAML_SCHEMA_PROTOCOL_2_0)) {
@@ -225,9 +225,9 @@ public class LogoutResponse {
 					}
 				}
 
-                if (settings.getWantMessagesSigned() && (signature == null || signature.isEmpty()) && !hasSignedResponse) {
-                    throw new ValidationError("The Message of the Logout Response is not signed and the SP requires it", ValidationError.NO_SIGNED_MESSAGE);
-                }
+				if (settings.getWantMessagesSigned() && (signature == null || signature.isEmpty()) && !hasSignedResponse) {
+					throw new ValidationError("The Message of the Logout Response is not signed and the SP requires it", ValidationError.NO_SIGNED_MESSAGE);
+				}
 			}
 
 			if (signature != null && !signature.isEmpty()) {
@@ -380,7 +380,7 @@ public class LogoutResponse {
 
 	/**
 	 * Gets the Issuer from Logout Response.
-	 * 
+	 *
 	 * @return the issuer of the logout response
 	 *
 	 * @throws XPathExpressionException
@@ -390,16 +390,16 @@ public class LogoutResponse {
 		NodeList issuers = this.query("/samlp:LogoutResponse/saml:Issuer");
 		if (issuers.getLength() == 1) {
 			issuer = issuers.item(0).getTextContent();
-		}    	
+		}
         return issuer;
     }
 
     /**
      * Gets the Status of the Logout Response.
-     * 
+     *
      * @return the Status
      *
-     * @throws XPathExpressionException 
+     * @throws XPathExpressionException
      */
     public String getStatus() throws XPathExpressionException
     {
@@ -407,9 +407,9 @@ public class LogoutResponse {
 		NodeList entries = this.query("/samlp:LogoutResponse/samlp:Status/samlp:StatusCode");
 		if (entries.getLength() == 1) {
 			statusCode = entries.item(0).getAttributes().getNamedItem("Value").getNodeValue();
-		}    	
+		}
         return statusCode;
-    }    
+    }
 
 	/**
      * Extracts nodes that match the query from the DOMDocument (Logout Response Menssage)
@@ -427,7 +427,7 @@ public class LogoutResponse {
      * Generates a Logout Response XML string.
      *
      * @param inResponseTo
-     *				InResponseTo attribute value to bet set at the Logout Response. 
+     *				InResponseTo attribute value to bet set at the Logout Response.
      */
 	public void build(String inResponseTo) {
 		id = Util.generateUniqueID();
@@ -444,20 +444,20 @@ public class LogoutResponse {
      */
 	public void build() {
 		build(null);
-	}	
+	}
 
 	/**
 	 * Substitutes LogoutResponse variables within a string by values.
 	 *
 	 * @param settings
 	 * 				Saml2Settings object. Setting data
-	 * 
-	 * @return the StrSubstitutor object of the LogoutResponse 
+	 *
+	 * @return the StrSubstitutor object of the LogoutResponse
 	 */
 	private StrSubstitutor generateSubstitutor(Saml2Settings settings) {
 		Map<String, String> valueMap = new HashMap<String, String>();
 
-		valueMap.put("id", id);		
+		valueMap.put("id", id);
 
 		String issueInstantString = Util.formatDateTime(issueInstant.getTimeInMillis());
 		valueMap.put("issueInstant", issueInstantString);
@@ -473,7 +473,7 @@ public class LogoutResponse {
 		if (inResponseTo != null) {
 			inResponseStr = " InResponseTo=\"" + inResponseTo + "\"";
 		}
-		valueMap.put("inResponseStr", inResponseStr);		
+		valueMap.put("inResponseStr", inResponseStr);
 
 		valueMap.put("issuer", settings.getSpEntityId());
 
@@ -500,7 +500,7 @@ public class LogoutResponse {
 	/**
      * After execute a validation process, if fails this method returns the cause
      *
-     * @return the cause of the validation error 
+     * @return the cause of the validation error
      */
 	public String getError() {
 		return error;

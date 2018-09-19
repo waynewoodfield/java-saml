@@ -1,6 +1,5 @@
 package com.onelogin.saml2.settings;
 
-import java.net.URL;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +11,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.PrivateKey;
 
+import com.onelogin.saml2.util.Constants;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.xml.security.exceptions.XMLSecurityException;
@@ -146,7 +146,7 @@ public class Metadata {
 		valueMap.put("spNameIDFormat", settings.getSpNameIDFormat());
 		valueMap.put("spAssertionConsumerServiceBinding", settings.getSpAssertionConsumerServiceBinding());
 		valueMap.put("spAssertionConsumerServiceUrl", settings.getSpAssertionConsumerServiceUrl().toString());
-		valueMap.put("sls", toSLSXml(settings.getSpSingleLogoutServiceUrl(), settings.getSpSingleLogoutServiceBinding()));
+		valueMap.put("sls", toSLSXml(settings));
 
 		valueMap.put("strAttributeConsumingService", getAttributeConsumingServiceXml());
 		
@@ -329,12 +329,17 @@ public class Metadata {
 	/**
 	 * @return the md:SingleLogoutService section of the metadata's template
 	 */
-	private String toSLSXml(URL spSingleLogoutServiceUrl, String spSingleLogoutServiceBinding) {
+	private String toSLSXml(Saml2Settings settings) {
 		StringBuilder slsXml = new StringBuilder();
 		
-		if (spSingleLogoutServiceUrl != null) {
-			slsXml.append("<md:SingleLogoutService Binding=\""+spSingleLogoutServiceBinding+"\"");
-			slsXml.append(" Location=\""+spSingleLogoutServiceUrl.toString()+"\"/>");
+		String spSingleLogoutServiceUrl = settings.getSpSingleLogoutServiceUrl().toString();
+		if (spSingleLogoutServiceUrl != null && settings.isSpSingleLogoutServiceBindingRedirect()) {
+			slsXml.append("<md:SingleLogoutService Binding=\"").append(Constants.BINDING_HTTP_REDIRECT).append("\"");
+			slsXml.append(" Location=\"").append(spSingleLogoutServiceUrl).append("\"/>");
+		}
+		if (spSingleLogoutServiceUrl != null && settings.isSpSingleLogoutServiceBindingPost()) {
+			slsXml.append("<md:SingleLogoutService Binding=\"").append(Constants.BINDING_HTTP_POST).append("\"");
+			slsXml.append(" Location=\"").append(spSingleLogoutServiceUrl).append("\"/>");
 		}
 		return slsXml.toString();
 	}
