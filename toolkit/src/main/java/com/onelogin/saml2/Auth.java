@@ -577,7 +577,7 @@ public class Auth {
 		if (samlResponseParameter != null) {
 			LogoutResponse logoutResponse = new LogoutResponse(settings, httpRequest);
 			lastResponse = logoutResponse.getLogoutResponseXml();
-			if (!logoutResponse.isValid(requestId)) {
+			if (settings.isValidateSingleLogout() && !logoutResponse.isValid(requestId)) {
 				errors.add("invalid_logout_response");
 				LOGGER.error("processSLO error. invalid_logout_response");
 				LOGGER.debug(" --> " + samlResponseParameter);

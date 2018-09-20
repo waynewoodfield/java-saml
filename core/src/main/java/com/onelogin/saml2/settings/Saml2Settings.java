@@ -75,6 +75,7 @@ public class Saml2Settings {
 	private boolean validateTimes = true;
 	private boolean validateAudience = true;
 	private boolean validateRecipient = true;
+	private boolean validateSingleLogout = true;
 
 	// Compress
 	private Boolean compressRequest = true;
@@ -727,6 +728,16 @@ public class Saml2Settings {
 	public void setValidateRecipient(boolean validateRecipient)
 	{
 		this.validateRecipient = validateRecipient;
+	}
+
+	public boolean isValidateSingleLogout()
+	{
+		return validateSingleLogout;
+	}
+
+	public void setValidateSingleLogout(boolean validateSingleLogout)
+	{
+		this.validateSingleLogout = validateSingleLogout;
 	}
 
 	/**
