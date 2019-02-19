@@ -365,6 +365,9 @@ public class Auth {
 	public String logout(String returnTo, String nameId, String sessionIndex, Boolean stay, String nameidFormat) throws IOException, XMLEntityException, SettingsException {
 		Map<String, String> parameters = new HashMap<String, String>();
 
+		if (!settings.isSendNameIdInLogout())
+			nameId = null;
+
 		LogoutRequest logoutRequest = new LogoutRequest(settings, null, nameId, sessionIndex, nameidFormat);
 		String samlLogoutRequest = logoutRequest.getEncodedLogoutRequest();
 		parameters.put("SAMLRequest", samlLogoutRequest);

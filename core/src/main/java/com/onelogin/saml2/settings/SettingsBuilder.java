@@ -89,6 +89,7 @@ public class SettingsBuilder {
 	public final static String SECURITY_VALIDATE_AUDIENCE = "onelogin.saml2.security.validateAudience";
 	public final static String SECURITY_VALIDATE_RECIPIENT = "onelogin.saml2.security.validateRecipient";
 	public final static String SECURITY_VALIDATE_SINGLE_LOGOUT = "onelogin.saml2.security.validate_single_logout";
+	public final static String SEND_NAMEID_IN_LOGOUT = "onelogin.saml2.send_nameid_in_logout";
 
 	// Compress
 	public final static String COMPRESS_REQUEST = "onelogin.saml2.compress.request";
@@ -320,6 +321,10 @@ public class SettingsBuilder {
 		Boolean validateSingleLogout = loadBooleanProperty(SECURITY_VALIDATE_SINGLE_LOGOUT);
 		if (validateSingleLogout != null)
 			saml2Setting.setValidateSingleLogout(validateSingleLogout);
+
+		Boolean sendNameIdInLogout = loadBooleanProperty(SEND_NAMEID_IN_LOGOUT);
+		if (sendNameIdInLogout != null)
+			saml2Setting.setSendNameIdInLogout(sendNameIdInLogout);
 	}
 
 	/**
