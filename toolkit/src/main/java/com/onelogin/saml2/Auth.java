@@ -274,7 +274,8 @@ public class Auth {
 			parameters.put("RelayState", relayState);
 		}
 
-		if (settings.getAuthnRequestsSigned()) {
+		boolean isPostBinding = Constants.BINDING_HTTP_POST.equals(settings.getIdpSingleSignOnServiceBinding());
+		if (settings.getAuthnRequestsSigned() && !isPostBinding) {
 			String sigAlg = settings.getSignatureAlgorithm();
 			String signature = this.buildRequestSignature(samlRequest, relayState, sigAlg);
 
@@ -290,7 +291,7 @@ public class Auth {
 			LOGGER.debug("AuthNRequest sent to " + ssoUrl + " --> " + samlRequest);
 		}
 
-		if (Constants.BINDING_HTTP_POST.equals(settings.getIdpSingleSignOnServiceBinding()))
+		if (isPostBinding)
 			return ServletUtils.sendPost(response, ssoUrl, parameters, stay);
 		else // Anything else is assumed to be a redirect
 			return ServletUtils.sendRedirect(response, ssoUrl, parameters, stay);

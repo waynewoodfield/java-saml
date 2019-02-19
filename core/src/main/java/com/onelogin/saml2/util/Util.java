@@ -13,6 +13,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -56,6 +57,7 @@ import javax.xml.XMLConstants;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.xml.security.c14n.Canonicalizer;
 import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.EncryptedKey;
 import org.apache.xml.security.encryption.XMLCipher;
@@ -63,6 +65,7 @@ import org.apache.xml.security.exceptions.XMLSecurityException;
 import org.apache.xml.security.keys.KeyInfo;
 import org.apache.xml.security.signature.XMLSignature;
 import org.apache.xml.security.transforms.Transforms;
+import org.apache.xml.security.utils.ElementProxy;
 import org.apache.xml.security.utils.XMLUtils;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -804,6 +807,30 @@ public final class Util {
         return signature;
 	}
 
+	public static ByteArrayOutputStream signPost(String xml, PrivateKey key, X509Certificate cert, String signAlgorithm) throws Exception {
+		final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+		Element rootElement = doc.getDocumentElement();
+		String rootElementId = rootElement.getAttribute("ID");
+		org.apache.xml.security.Init.init();
+		if (signAlgorithm == null) {
+			signAlgorithm = Constants.RSA_SHA1;
+		}
+
+		ElementProxy.setDefaultPrefix(org.apache.xml.security.utils.Constants.SignatureSpecNS, "");
+		final XMLSignature sig = new XMLSignature(doc, null, signAlgorithm);
+		final Transforms transforms = new Transforms(doc);
+		transforms.addTransform(Constants.ENVSIG);
+		sig.addDocument("", transforms, Constants.SHA1);
+		sig.addKeyInfo(cert);
+		sig.addKeyInfo(cert.getPublicKey());
+		sig.sign(key);
+		doc.getDocumentElement().appendChild(sig.getElement());
+		Element referenceElement = (Element)doc.getDocumentElement().getElementsByTagNameNS(Constants.NS_DS, "Reference").item(0);
+		referenceElement.setAttribute("URI", "#" + rootElementId);
+		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		outputStream.write(Canonicalizer.getInstance(Constants.C14N_WC).canonicalizeSubtree(doc));
+		return outputStream;
+	}
 	/**
 	 * Converts Signature algorithm method name
 	 *

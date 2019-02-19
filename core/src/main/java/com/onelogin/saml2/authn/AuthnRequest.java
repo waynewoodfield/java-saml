@@ -2,6 +2,8 @@ package com.onelogin.saml2.authn;
 
 import java.io.IOException;
 import java.net.URL;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -94,7 +96,19 @@ public class AuthnRequest {
 		this.setNameIdPolicy = setNameIdPolicy;
 
 		StrSubstitutor substitutor = generateSubstitutor(settings);
-		authnRequestString = substitutor.replace(getAuthnRequestTemplate());
+		String authnRequestString = substitutor.replace(getAuthnRequestTemplate());
+		if (settings.getAuthnRequestsSigned() && Constants.BINDING_HTTP_POST.equals(settings.getIdpSingleSignOnServiceBinding())) {
+			try {
+				PrivateKey key = settings.getSPkey();
+				X509Certificate cert = settings.getSPcert();
+				String sigalg = settings.getSignatureAlgorithm();
+				authnRequestString = Util.signPost(authnRequestString, key, cert, sigalg).toString("UTF-8");
+			} catch (Exception e) {
+				LOGGER.error("AuthnRequest not signed as requested:", e);
+			}
+		}
+		this.authnRequestString = authnRequestString;
+
 		LOGGER.debug("AuthNRequest --> " + authnRequestString);
 	}
 
