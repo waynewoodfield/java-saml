@@ -27,16 +27,18 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Calendar;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.util.*;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.xml.crypto.dsig.*;
+import javax.xml.crypto.dsig.dom.DOMSignContext;
+import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
+import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
+import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -808,25 +810,32 @@ public final class Util {
 	}
 
 	public static ByteArrayOutputStream signPost(String xml, PrivateKey key, X509Certificate cert, String signAlgorithm) throws Exception {
-		final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+		DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
+		documentFactory.setNamespaceAware(true);
+		final Document doc = documentFactory.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 		Element rootElement = doc.getDocumentElement();
-		String rootElementId = rootElement.getAttribute("ID");
-		org.apache.xml.security.Init.init();
+		String id = rootElement.getAttributeNS(null, "ID");
+		if (StringUtils.isEmpty(id))
+		{
+			id = UUID.randomUUID().toString();
+			rootElement.setAttributeNS(null, "ID", id);
+		}
+		rootElement.setIdAttributeNS(null, "ID", true);
 		if (signAlgorithm == null) {
 			signAlgorithm = Constants.RSA_SHA1;
 		}
 
-		ElementProxy.setDefaultPrefix(org.apache.xml.security.utils.Constants.SignatureSpecNS, "");
-		final XMLSignature sig = new XMLSignature(doc, null, signAlgorithm);
-		final Transforms transforms = new Transforms(doc);
-		transforms.addTransform(Constants.ENVSIG);
-		sig.addDocument("", transforms, Constants.SHA1);
-		sig.addKeyInfo(cert);
-		sig.addKeyInfo(cert.getPublicKey());
-		sig.sign(key);
-		doc.getDocumentElement().appendChild(sig.getElement());
-		Element referenceElement = (Element)doc.getDocumentElement().getElementsByTagNameNS(Constants.NS_DS, "Reference").item(0);
-		referenceElement.setAttribute("URI", "#" + rootElementId);
+		XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
+		List<Transform> transforms = Collections.singletonList(fac.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
+		Reference ref = fac.newReference("#" + id, fac.newDigestMethod(DigestMethod.SHA1, null), transforms,null, null);
+		SignedInfo si = fac.newSignedInfo(fac.newCanonicalizationMethod(CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS, (C14NMethodParameterSpec) null), fac.newSignatureMethod(signAlgorithm, null),  Collections.singletonList(ref));
+		KeyInfoFactory kif = fac.getKeyInfoFactory();
+		KeyValue kv = kif.newKeyValue(cert.getPublicKey());
+		javax.xml.crypto.dsig.keyinfo.KeyInfo ki = kif.newKeyInfo(Collections.singletonList(kv));
+		DOMSignContext dsc = new DOMSignContext(key, doc.getDocumentElement());
+		javax.xml.crypto.dsig.XMLSignature signature = fac.newXMLSignature(si, ki);
+		signature.sign(dsc);
+
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		outputStream.write(Canonicalizer.getInstance(Constants.C14N_WC).canonicalizeSubtree(doc));
 		return outputStream;
