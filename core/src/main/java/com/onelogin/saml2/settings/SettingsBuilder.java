@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +67,7 @@ public class SettingsBuilder {
 	public final static String IDP_SINGLE_LOGOUT_SERVICE_BINDING_PROPERTY_KEY = "onelogin.saml2.idp.single_logout_service.binding";
 
 	public final static String IDP_X509CERT_PROPERTY_KEY = "onelogin.saml2.idp.x509cert";
+	public final static String IDP_PRIVATEKEY_PROPERTY_KEY = "onelogin.saml2.idp.privatekey";
 	public final static String CERTFINGERPRINT_PROPERTY_KEY = "onelogin.saml2.idp.certfingerprint";
 	public final static String CERTFINGERPRINT_ALGORITHM_PROPERTY_KEY = "onelogin.saml2.idp.certfingerprint_algorithm";
 
@@ -91,10 +93,15 @@ public class SettingsBuilder {
 	public final static String SECURITY_VALIDATE_SINGLE_LOGOUT = "onelogin.saml2.security.validate_single_logout";
 	public final static String SEND_NAMEID_IN_LOGOUT = "onelogin.saml2.send_nameid_in_logout";
 
+	// Identity Provider
+	public final static String IDP_TIME_TOLERANCE = "onelogin.saml2.idp.time_tolerance";
+
+
 	// Compress
 	public final static String COMPRESS_REQUEST = "onelogin.saml2.compress.request";
 	public final static String COMPRESS_RESPONSE = "onelogin.saml2.compress.response";
-	
+	public final static String COMPRESS_LOGOUT_RESPONSE = "onelogin.saml2.compress.logout.response";
+
 	// Misc
 	public final static String CONTACT_TECHNICAL_GIVEN_NAME = "onelogin.saml2.contacts.technical.given_name";
 	public final static String CONTACT_TECHNICAL_EMAIL_ADDRESS = "onelogin.saml2.contacts.technical.email_address";
@@ -232,6 +239,10 @@ public class SettingsBuilder {
 		if (idpX509cert != null)
 			saml2Setting.setIdpx509cert(idpX509cert);
 
+		PrivateKey idpPrivateKey = loadPrivateKeyFromProp(IDP_PRIVATEKEY_PROPERTY_KEY);
+		if (idpPrivateKey != null)
+			saml2Setting.setIdpPrivateKey(idpPrivateKey);
+
 		String idpCertFingerprint = loadStringProperty(CERTFINGERPRINT_PROPERTY_KEY);
 		if (idpCertFingerprint != null)
 			saml2Setting.setIdpCertFingerprint(idpCertFingerprint);
@@ -239,6 +250,10 @@ public class SettingsBuilder {
 		String idpCertFingerprintAlgorithm = loadStringProperty(CERTFINGERPRINT_ALGORITHM_PROPERTY_KEY);
 		if (idpCertFingerprintAlgorithm != null && !idpCertFingerprintAlgorithm.isEmpty())
 			saml2Setting.setIdpCertFingerprintAlgorithm(idpCertFingerprintAlgorithm);
+
+		String idpTimeTolerance = loadStringProperty(IDP_TIME_TOLERANCE);
+		if (StringUtils.isNotEmpty(idpTimeTolerance) && StringUtils.isNumeric(idpTimeTolerance))
+			saml2Setting.setIdpTimeTolerance(Integer.parseInt(idpTimeTolerance));
 	}
 
 	/**
@@ -340,6 +355,11 @@ public class SettingsBuilder {
 		if (compressResponse != null) {
 			saml2Setting.setCompressResponse(compressResponse);
 		}		
+
+		Boolean compressLogoutResponse = loadBooleanProperty(COMPRESS_LOGOUT_RESPONSE);
+		if (compressLogoutResponse != null) {
+			saml2Setting.setCompressLogoutResponse(compressLogoutResponse);
+		}
 	}
 	
 	/**

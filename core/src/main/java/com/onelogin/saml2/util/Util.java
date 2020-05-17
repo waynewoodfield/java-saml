@@ -809,18 +809,18 @@ public final class Util {
         return signature;
 	}
 
-	public static ByteArrayOutputStream signPost(String xml, PrivateKey key, X509Certificate cert, String signAlgorithm) throws Exception {
+	public static ByteArrayOutputStream signPost(String xml, PrivateKey key, X509Certificate cert, String signAlgorithm, boolean signAssertion) throws Exception {
 		DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
 		documentFactory.setNamespaceAware(true);
 		final Document doc = documentFactory.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
-		Element rootElement = doc.getDocumentElement();
-		String id = rootElement.getAttributeNS(null, "ID");
+		Element elementToSign = signAssertion ? (Element)doc.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion", "Assertion").item(0) : doc.getDocumentElement();
+		String id = elementToSign.getAttributeNS(null, "ID");
 		if (StringUtils.isEmpty(id))
 		{
 			id = UUID.randomUUID().toString();
-			rootElement.setAttributeNS(null, "ID", id);
+			elementToSign.setAttributeNS(null, "ID", id);
 		}
-		rootElement.setIdAttributeNS(null, "ID", true);
+		elementToSign.setIdAttributeNS(null, "ID", true);
 		if (signAlgorithm == null) {
 			signAlgorithm = Constants.RSA_SHA1;
 		}
@@ -832,7 +832,7 @@ public final class Util {
 		KeyInfoFactory kif = fac.getKeyInfoFactory();
 		KeyValue kv = kif.newKeyValue(cert.getPublicKey());
 		javax.xml.crypto.dsig.keyinfo.KeyInfo ki = kif.newKeyInfo(Collections.singletonList(kv));
-		DOMSignContext dsc = new DOMSignContext(key, doc.getDocumentElement());
+		DOMSignContext dsc = new DOMSignContext(key, elementToSign);
 		javax.xml.crypto.dsig.XMLSignature signature = fac.newXMLSignature(si, ki);
 		signature.sign(dsc);
 

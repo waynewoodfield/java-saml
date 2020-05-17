@@ -53,6 +53,7 @@ public class Saml2Settings {
 	private URL idpSingleLogoutServiceResponseUrl = null;
 	private String idpSingleLogoutServiceBinding = Constants.BINDING_HTTP_REDIRECT;
 	private X509Certificate idpx509cert = null;
+	private PrivateKey idpPrivateKey = null;
 	private String idpCertFingerprint = null;
 	private String idpCertFingerprintAlgorithm = "sha1";
 
@@ -78,9 +79,12 @@ public class Saml2Settings {
 	private boolean validateSingleLogout = true;
 	private boolean sendNameIdInLogout = true;
 
+	private int idpTimeTolerance = 10; // minutes
+
 	// Compress
 	private Boolean compressRequest = true;
-	private Boolean compressResponse = true;
+	private Boolean compressResponse = false;
+	private Boolean compressLogoutResponse = true;
 
 	// Misc
 	private List<Contact> contacts = new LinkedList<Contact>();
@@ -205,6 +209,11 @@ public class Saml2Settings {
 	 */
 	public final X509Certificate getIdpx509cert() {
 		return idpx509cert;
+	}
+
+	public PrivateKey getIdpPrivateKey()
+	{
+		return idpPrivateKey;
 	}
 
 	/**
@@ -519,6 +528,11 @@ public class Saml2Settings {
 		this.idpx509cert = idpX509cert;
 	}
 
+	public void setIdpPrivateKey(PrivateKey idpPrivateKey)
+	{
+		this.idpPrivateKey = idpPrivateKey;
+	}
+
 	/**
 	 * Set the idpCertFingerprint setting value
 	 *
@@ -751,6 +765,16 @@ public class Saml2Settings {
 		this.sendNameIdInLogout = sendNameIdInLogout;
 	}
 
+	public int getIdpTimeTolerance()
+	{
+		return idpTimeTolerance;
+	}
+
+	public void setIdpTimeTolerance(int idpTimeTolerance)
+	{
+		this.idpTimeTolerance = idpTimeTolerance;
+	}
+
 	/**
 	 * Set the compressRequest setting value
 	 *
@@ -783,6 +807,16 @@ public class Saml2Settings {
 	 */
 	public boolean isCompressResponseEnabled() {
 		return compressResponse;
+	}
+
+	public Boolean isCompressLogoutResponseEnabled()
+	{
+		return compressLogoutResponse;
+	}
+
+	public void setCompressLogoutResponse(Boolean compressLogoutResponse)
+	{
+		this.compressLogoutResponse = compressLogoutResponse;
 	}
 
 	/**

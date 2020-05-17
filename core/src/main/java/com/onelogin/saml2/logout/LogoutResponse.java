@@ -115,7 +115,7 @@ public class LogoutResponse {
 	public String getEncodedLogoutResponse(Boolean deflated) throws IOException {
 		String encodedLogoutResponse;
 		if (deflated == null) {
-			deflated = settings.isCompressResponseEnabled();
+			deflated = settings.isCompressLogoutResponseEnabled();
 		}
 		if (deflated) {
 			encodedLogoutResponse = Util.deflatedBase64encoded(getLogoutResponseXml());

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -121,7 +122,7 @@ public class AuthnResponseTest {
 		Saml2Settings settings = new SettingsBuilder().fromFile("config/config.my.properties").build();
 		String samlResponseEncoded = Util.getFileAsString("data/responses/open_saml_response.xml.base64");
 		SamlResponse samlResponse = new SamlResponse(settings, newHttpRequest(samlResponseEncoded));
-		HashMap<String, List<String>> attributes = samlResponse.getAttributes();
+		Map<String, List<String>> attributes = samlResponse.getAttributes();
 
 		assertFalse(attributes.isEmpty());
 
@@ -397,7 +398,7 @@ public class AuthnResponseTest {
 
 		String samlResponseEncoded = Util.getFileAsString("data/responses/invalids/no_nameid.xml.base64");
 		SamlResponse samlResponse = new SamlResponse(settings, newHttpRequest(samlResponseEncoded));
-		HashMap<String, String> nameIdData = samlResponse.getNameIdData();
+		Map<String, String> nameIdData = samlResponse.getNameIdData();
 	}
 
 	/**
@@ -418,7 +419,7 @@ public class AuthnResponseTest {
 		settings.setWantNameId(true);
 		String samlResponseEncoded = Util.getFileAsString("data/responses/invalids/wrong_spnamequalifier.xml.base64");
 		SamlResponse samlResponse = new SamlResponse(settings, newHttpRequest(samlResponseEncoded));
-		HashMap<String, String> nameIdData = samlResponse.getNameIdData();
+		Map<String, String> nameIdData = samlResponse.getNameIdData();
 	}
 
 	/**
@@ -437,12 +438,12 @@ public class AuthnResponseTest {
 		Saml2Settings settings = new SettingsBuilder().fromFile("config/config.min.properties").build();
 		String samlResponseEncoded = Util.getFileAsString("data/responses/invalids/empty_nameid.xml.base64");
 		SamlResponse samlResponse = new SamlResponse(settings, newHttpRequest(samlResponseEncoded));
-		HashMap<String, String> nameIdData = samlResponse.getNameIdData();
+		Map<String, String> nameIdData = samlResponse.getNameIdData();
 		assertTrue(nameIdData.get("Value").isEmpty());
 
 		settings.setStrict(true);
 		SamlResponse samlResponse2 = new SamlResponse(settings, newHttpRequest(samlResponseEncoded));
-		HashMap<String, String> nameIdData2 = samlResponse2.getNameIdData();
+		Map<String, String> nameIdData2 = samlResponse2.getNameIdData();
 	}
 	
 	/**
@@ -904,7 +905,7 @@ public class AuthnResponseTest {
 		String samlResponseEncoded = Util.getFileAsString("data/responses/invalids/duplicated_attributes.xml.base64");
 		SamlResponse samlResponse = new SamlResponse(settings, newHttpRequest(samlResponseEncoded));
 
-		HashMap<String, List<String>> attributes = samlResponse.getAttributes();
+		Map<String, List<String>> attributes = samlResponse.getAttributes();
 	}
 	
 	/**
@@ -2601,7 +2602,7 @@ public class AuthnResponseTest {
 		samlResponse = new SamlResponse(settings, newHttpRequest(requestURL, samlResponseEncoded));
 		assertTrue(samlResponse.isValid());
 		
-		HashMap<String, List<String>> attributes = samlResponse.getAttributes();
+		Map<String, List<String>> attributes = samlResponse.getAttributes();
 		assertFalse(attributes.isEmpty());
 		String attrName = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress";
 		assertEquals("saml@user.com", attributes.get(attrName).get(0));

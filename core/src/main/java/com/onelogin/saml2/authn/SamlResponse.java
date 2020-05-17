@@ -3,15 +3,13 @@ package com.onelogin.saml2.authn;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
+import org.apache.commons.lang3.text.StrSubstitutor;
 import org.joda.time.DateTime;
 import org.joda.time.Instant;
 import org.slf4j.Logger;
@@ -80,6 +78,16 @@ public class SamlResponse {
 	 */ 
 	private String error;
 
+	private Map<String, String> nameIdData;
+	private Map<String, List<String>> attributes;
+
+	/* Properties for building a new SAMLResponse */
+	private String id;
+	private String assertionId;
+	private String authnSessionIndex;
+	private Date issueInstant;
+	private String inResponseTo;
+
 	/**
 	 * Constructor to have a Response object full builded and ready to validate
 	 * the saml response
@@ -103,7 +111,99 @@ public class SamlResponse {
 		if (request != null) {
 			currentUrl = request.getRequestURL();
 			loadXmlFromBase64(request.getParameter("SAMLResponse"));
+			parseNameIdData();
+			parseAttributes();
 		}
+	}
+
+	public SamlResponse(Saml2Settings settings, String inResponseTo, String nameId, Map<String, List<String>> attributes) {
+		this.id = Util.generateUniqueID();
+		this.assertionId = Util.generateUniqueID();
+		this.authnSessionIndex = Util.generateUniqueID();
+		this.issueInstant = new Date();
+		this.nameIdData = new HashMap<>();
+		this.nameIdData.put("Format", settings.getSpNameIDFormat());
+		this.nameIdData.put("Value", nameId);
+		this.inResponseTo = inResponseTo;
+		this.currentUrl = settings.getSpAssertionConsumerServiceUrl().toString();
+		this.settings = settings;
+		this.attributes = attributes;
+
+		StrSubstitutor substitutor = generateSubstitutor(settings);
+		String samlResponse = substitutor.replace(getSamlResponseTemplate());
+		if (settings.getWantAssertionsSigned() && Constants.BINDING_HTTP_POST.equals(settings.getSpAssertionConsumerServiceBinding())) {
+			try {
+				PrivateKey key = settings.getIdpPrivateKey();
+				X509Certificate cert = settings.getIdpx509cert();
+				String sigalg = settings.getSignatureAlgorithm();
+
+				// The signature in an assertion is supposed to go between the Assertion Issuer and the Subject, but this signing utility
+				// always places the signature at the end of the element being signed.  There's probably a way to tell the signing context
+				// object to insert its signature in a better place.  There's definitely a way to do this by moving the signature around in
+				// the dom document before we stringify it again.  But I just cheated and did string manipulation here.  Anyone that wants
+				// to do this better sometime, feel free.
+				samlResponse = Util.signPost(samlResponse, key, cert, sigalg, true).toString("UTF-8");
+				int assertionLocation = samlResponse.indexOf("<saml:Assertion ");
+				int assertionDsigLocation = samlResponse.indexOf("<Signature ", assertionLocation);
+				int endAssertionDsigLocation = samlResponse.indexOf("</Signature>", assertionLocation) + 12;
+				int subjectLocation = samlResponse.indexOf("<saml:Subject>");
+				samlResponse = samlResponse.substring(0, subjectLocation)
+								+ samlResponse.substring(assertionDsigLocation, endAssertionDsigLocation)
+								+ samlResponse.substring(subjectLocation, assertionDsigLocation)
+								+ samlResponse.substring(endAssertionDsigLocation);
+
+				// Same as above.  The signature in the overall document is supposed to be located between the document Issuer and the Status.
+				// Anyone wants to do this better with the signing context or document dom, knock yourself out.
+				samlResponse = Util.signPost(samlResponse, key, cert, sigalg, false).toString("UTF-8");
+				int endAssertionLocation = samlResponse.indexOf("</saml:Assertion>") + 17;
+				int dsigLocation = samlResponse.indexOf("<Signature ", endAssertionLocation);
+				int endDsigLocation = samlResponse.indexOf("</Signature>", endAssertionLocation) + 12;
+				int statusLocation = samlResponse.indexOf("<samlp:Status>");
+				samlResponse = samlResponse.substring(0, statusLocation)
+								+ samlResponse.substring(dsigLocation, endDsigLocation)
+								+ samlResponse.substring(statusLocation, dsigLocation)
+								+ samlResponse.substring(endDsigLocation);
+			} catch (Exception e) {
+				LOGGER.error("SAMLResponse not signed as requested:", e);
+			}
+		}
+		this.samlResponseString = samlResponse;
+		this.samlResponseDocument = Util.loadXML(samlResponse);
+
+		LOGGER.debug("SAMLResponse --> " + samlResponse);
+	}
+
+	private StrSubstitutor generateSubstitutor(Saml2Settings settings)
+	{
+		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+		df.setTimeZone(TimeZone.getTimeZone("GMT"));
+		Date preExpiration = new Date(issueInstant.getTime() - 60000 * settings.getIdpTimeTolerance());
+		Date expiration = new Date(issueInstant.getTime() + 60000 * settings.getIdpTimeTolerance());
+		Map<String, String> substitutionMap = new HashMap<>();
+		substitutionMap.put("issuerEntity", settings.getIdpEntityId());
+		substitutionMap.put("id", this.id);
+		substitutionMap.put("assertionId", this.assertionId);
+		substitutionMap.put("nowUTC", df.format(issueInstant));
+		substitutionMap.put("nameidFormat", nameIdData.get("Format"));
+		substitutionMap.put("nameid", nameIdData.get("Value"));
+		substitutionMap.put("inResponseTo", " InResponseTo=\"" + inResponseTo + "\"");
+		substitutionMap.put("preExpiration", df.format(preExpiration));
+		substitutionMap.put("expiration", df.format(expiration));
+		substitutionMap.put("destinationUrl", this.currentUrl);
+		substitutionMap.put("audience", settings.getSpEntityId());
+		substitutionMap.put("authnSessionIndex", authnSessionIndex);
+
+		StringBuilder attributesXml = new StringBuilder();
+		for (String key : attributes.keySet()) {
+			List<String> values = attributes.get(key);
+			attributesXml.append("<saml:Attribute FriendlyName=\"").append(key).append("\" Name=\"").append(key).append("\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n");
+			for (String value : values)
+				attributesXml.append("<saml:AttributeValue xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"xs:string\">").append(value).append("</saml:AttributeValue>\n");
+			attributesXml.append("</saml:Attribute>");
+		}
+		substitutionMap.put("attributes", attributesXml.toString());
+
+		return new StrSubstitutor(substitutionMap);
 	}
 
 	/**
@@ -119,7 +219,7 @@ public class SamlResponse {
 	 * @throws XPathExpressionException
 	 * @throws ValidationError
 	 */
-	public void loadXmlFromBase64(String responseStr) throws ParserConfigurationException, XPathExpressionException, SAXException, IOException, SettingsException, ValidationError {
+	private void loadXmlFromBase64(String responseStr) throws ParserConfigurationException, XPathExpressionException, SAXException, IOException, SettingsException, ValidationError {
 		samlResponseString = new String(Util.base64decoder(responseStr), "UTF-8");
 		samlResponseDocument = Util.loadXML(samlResponseString);
 
@@ -410,17 +510,12 @@ public class SamlResponse {
 		return isValid(null);
 	}
 
-	/**
-     * Gets the NameID provided from the SAML Response Document.
-     *
-     * @return the Name ID Data (Value, Format, NameQualifier, SPNameQualifier)
-     *
-	 * @throws Exception 
-     *
-     */
-	public HashMap<String,String> getNameIdData() throws Exception {
-		HashMap<String,String> nameIdData = new HashMap<String, String>();
+	public Map<String,String> getNameIdData() {
+		return nameIdData;
+	}
 
+	public void parseNameIdData()  throws XPathExpressionException, SettingsException, ValidationError {
+		nameIdData = new HashMap<>();
 		NodeList encryptedIDNodes = this.queryAssertion("/saml:Subject/saml:EncryptedID");
 		NodeList nameIdNodes;
 		Element nameIdElem;
@@ -438,7 +533,7 @@ public class SamlResponse {
 			nameIdNodes = this.queryAssertion("/saml:Subject/saml:EncryptedID/saml:NameID|/saml:Subject/saml:NameID");
 
 			if (nameIdNodes == null || nameIdNodes.getLength() == 0) {
-				throw new Exception("Not able to decrypt the EncryptedID and get a NameID");
+				throw new ValidationError("Not able to decrypt the EncryptedID and get a NameID", ValidationError.NO_NAMEID);
 			}
 		} else {
 			nameIdNodes = this.queryAssertion("/saml:Subject/saml:NameID");
@@ -475,7 +570,6 @@ public class SamlResponse {
 				throw new ValidationError("No name id found in Document.", ValidationError.NO_NAMEID);
 			}
 		}
-		return nameIdData;
 	}
 
     /**
@@ -486,7 +580,6 @@ public class SamlResponse {
      * @throws Exception 
      */
 	public String getNameId() throws Exception {
-		HashMap<String,String> nameIdData = getNameIdData();
 		String nameID = null;
 		if (!nameIdData.isEmpty()) {
 			LOGGER.debug("SAMLResponse has NameID --> " + nameIdData.get("Value"));
@@ -503,7 +596,6 @@ public class SamlResponse {
      * @throws Exception
      */
 	public String getNameIdFormat() throws Exception {
-		HashMap<String,String> nameIdData = getNameIdData();
 		String nameidFormat = null;
 		if (!nameIdData.isEmpty() && nameIdData.containsKey("Format")) {
 			LOGGER.debug("SAMLResponse has NameID Format --> " + nameIdData.get("Format"));
@@ -516,14 +608,13 @@ public class SamlResponse {
      * Gets the Attributes from the AttributeStatement element.
      *
      * @return the attributes of the SAML Assertion
-     *
-	 * @throws XPathExpressionException
-	 * @throws ValidationError
-     *
-     */	
-	public HashMap<String, List<String>> getAttributes() throws XPathExpressionException, ValidationError {
-		HashMap<String, List<String>> attributes = new HashMap<String, List<String>>();
+     */
+	public Map<String, List<String>> getAttributes() {
+		return attributes;
+	}
 
+	private void parseAttributes() throws XPathExpressionException, ValidationError {
+		attributes = new HashMap<>();
 		NodeList nodes = this.queryAssertion("/saml:AttributeStatement/saml:Attribute");
 		
 		if (nodes.getLength() != 0) {
@@ -536,7 +627,7 @@ public class SamlResponse {
 				
 				NodeList childrens = nodes.item(i).getChildNodes();
 
-				List<String> attrValues = new ArrayList<String>();
+				List<String> attrValues = new ArrayList<>();
 				for (int j = 0; j < childrens.getLength(); j++) {
 					if ("AttributeValue".equals(childrens.item(j).getLocalName())) {
 						attrValues.add(childrens.item(j).getTextContent());
@@ -548,7 +639,6 @@ public class SamlResponse {
 		} else {
 			LOGGER.debug("SAMLResponse has no attributes");
 		}
-		return attributes;
 	}
 
 	/**
@@ -1102,6 +1192,13 @@ public class SamlResponse {
 		return xml; 
 	}
 
+	public String getEncodedSAMLResponse() throws IOException {
+		if (settings.isCompressResponseEnabled())
+			return Util.deflatedBase64encoded(getSAMLResponseXml());
+		else
+			return Util.base64encoder(getSAMLResponseXml());
+	}
+
 	/**
 	 * @return the SAMLResponse Document, If the Assertion of the SAMLResponse was encrypted,  
 	 *         returns the Document with the assertion decrypted
@@ -1114,5 +1211,38 @@ public class SamlResponse {
         	doc = samlResponseDocument;
 		}
 		return doc;
+	}
+
+	private static StringBuilder getSamlResponseTemplate() {
+		StringBuilder template = new StringBuilder();
+		template.append("<?xml version=\"1.0\"?>");
+		template.append("<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" Destination=\"${destinationUrl}\" ID=\"${id}\"${inResponseTo} IssueInstant=\"${nowUTC}\" Version=\"2.0\">");
+		template.append("<saml:Issuer>${issuerEntity}</saml:Issuer>");
+		template.append("<samlp:Status>");
+		template.append("<samlp:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:Success\"/>");
+		template.append("</samlp:Status>");
+		template.append("<saml:Assertion xmlns=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"${assertionId}\" IssueInstant=\"${nowUTC}\" Version=\"2.0\">");
+		template.append("<saml:Issuer>${issuerEntity}</saml:Issuer>");
+		template.append("<saml:Subject>");
+		template.append("<saml:NameID Format=\"${nameidFormat}\">${nameid}</saml:NameID>");
+		template.append("<saml:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\">");
+		template.append("<saml:SubjectConfirmationData${inResponseTo} NotOnOrAfter=\"${expiration}\" Recipient=\"${destinationUrl}\"/>");
+		template.append("</saml:SubjectConfirmation>");
+		template.append("</saml:Subject>");
+		template.append("<saml:Conditions NotBefore=\"${preExpiration}\" NotOnOrAfter=\"${expiration}\">");
+		template.append("<saml:AudienceRestriction>");
+		template.append("<saml:Audience>${audience}</saml:Audience>");
+		template.append("</saml:AudienceRestriction>");
+		template.append("<saml:OneTimeUse/>");
+		template.append("</saml:Conditions>");
+		template.append("<saml:AuthnStatement AuthnInstant=\"${nowUTC}\">");
+		template.append("<saml:AuthnContext>");
+		template.append("<saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified</saml:AuthnContextClassRef>");
+		template.append("</saml:AuthnContext>");
+		template.append("</saml:AuthnStatement>\n<saml:AttributeStatement>");
+		template.append("${attributes}</saml:AttributeStatement>");
+		template.append("</saml:Assertion>");
+		template.append("</samlp:Response>");
+		return template;
 	}
 }

@@ -391,15 +391,18 @@ public class SettingBuilderTest {
 		Saml2Settings setting = new SettingsBuilder().fromFile("config/config.min.properties").build();
 
 		assertTrue(setting.isCompressRequestEnabled());
-		assertTrue(setting.isCompressResponseEnabled());
+		assertFalse(setting.isCompressResponseEnabled());
+		assertTrue(setting.isCompressLogoutResponseEnabled());
 
 		setting = new SettingsBuilder().fromFile("config/config.compress.properties").build();
 		assertTrue(setting.isCompressRequestEnabled());
 		assertTrue(setting.isCompressResponseEnabled());
+		assertTrue(setting.isCompressLogoutResponseEnabled());
 
 		setting = new SettingsBuilder().fromFile("config/config.nocompress.properties").build();
 		assertFalse(setting.isCompressRequestEnabled());
 		assertFalse(setting.isCompressResponseEnabled());
+		assertFalse(setting.isCompressLogoutResponseEnabled());
 	}
 	
 	/**
