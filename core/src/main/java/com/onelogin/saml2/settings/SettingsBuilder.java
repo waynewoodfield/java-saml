@@ -79,6 +79,7 @@ public class SettingsBuilder {
 	public final static String SECURITY_WANT_MESSAGES_SIGNED = "onelogin.saml2.security.want_messages_signed";
 	public final static String SECURITY_WANT_ASSERTIONS_SIGNED = "onelogin.saml2.security.want_assertions_signed";
 	public final static String SECURITY_WANT_ASSERTIONS_ENCRYPTED = "onelogin.saml2.security.want_assertions_encrypted";
+	public final static String SECURITY_WANT_AUTHN_REQUESTS_ENCRYPTED = "onelogin.saml2.security.want_authn_requests_encrypted";
 	public final static String SECURITY_WANT_NAMEID = "onelogin.saml2.security.want_nameid";
 	public final static String SECURITY_WANT_NAMEID_ENCRYPTED = "onelogin.saml2.security.want_nameid_encrypted";
 	public final static String SECURITY_SIGN_METADATA = "onelogin.saml2.security.sign_metadata";
@@ -287,6 +288,10 @@ public class SettingsBuilder {
 		Boolean wantAssertionsEncrypted = loadBooleanProperty(SECURITY_WANT_ASSERTIONS_ENCRYPTED);
 		if (wantAssertionsEncrypted != null)
 			saml2Setting.setWantAssertionsEncrypted(wantAssertionsEncrypted);
+
+		Boolean wantAuthnRequestsEncrypted = loadBooleanProperty(SECURITY_WANT_AUTHN_REQUESTS_ENCRYPTED);
+		if (wantAuthnRequestsEncrypted != null)
+			saml2Setting.setWantAuthnRequestsEncrypted(wantAuthnRequestsEncrypted);
 
 		Boolean wantNameId = loadBooleanProperty(SECURITY_WANT_NAMEID);
 		if (wantNameId != null)

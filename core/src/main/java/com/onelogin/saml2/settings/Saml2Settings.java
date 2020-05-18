@@ -65,6 +65,7 @@ public class Saml2Settings {
 	private Boolean wantMessagesSigned = false;
 	private Boolean wantAssertionsSigned = false;
 	private Boolean wantAssertionsEncrypted = false;
+	private Boolean wantAuthnRequestsEncrypted = false;
 	private Boolean wantNameId = true;
 	private Boolean wantNameIdEncrypted = false;
 	private Boolean signMetadata = false;
@@ -623,6 +624,16 @@ public class Saml2Settings {
 		this.wantAssertionsEncrypted = wantAssertionsEncrypted;
 	}
 
+	public Boolean getWantAuthnRequestsEncrypted()
+	{
+		return wantAuthnRequestsEncrypted;
+	}
+
+	public void setWantAuthnRequestsEncrypted(Boolean wantAuthnRequestsEncrypted)
+	{
+		this.wantAuthnRequestsEncrypted = wantAuthnRequestsEncrypted;
+	}
+
 	/**
 	 * Set the wantNameId setting value
 	 *
@@ -1022,6 +1033,24 @@ public class Saml2Settings {
 		return metadataString;
 	}
 	
+	public String getIdpMetadata() throws CertificateEncodingException {
+		IdpMetadata metadataObj = new IdpMetadata(this);
+		String metadataString = metadataObj.getMetadataString();
+
+		// Check if must be signed
+		Boolean signMetadata = this.getSignMetadata();
+		if (signMetadata) {
+			// TODO Extend this in order to be able to read not only SP privateKey/certificate
+			try {
+				metadataString =  IdpMetadata.signMetadata(metadataString, this.getIdpPrivateKey(), this.getIdpx509cert(), this.getSignatureAlgorithm());
+			} catch (Exception e) {
+				LOGGER.debug("Error executing signMetadata: " + e.getMessage(), e);
+			}
+		}
+
+		return metadataString;
+	}
+
 	/**
 	 * Validates an XML SP Metadata.
 	 *
