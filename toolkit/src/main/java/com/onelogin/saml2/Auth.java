@@ -257,7 +257,7 @@ public class Auth {
 	 * @throws IOException
 	 * @throws SettingsException
 	 */
-	public String login(String relayState, Boolean forceAuthn, Boolean isPassive, Boolean setNameIdPolicy, Boolean stay) throws IOException, SettingsException {
+	public String login(String relayState, Map<String, String> extraParams, Boolean forceAuthn, Boolean isPassive, Boolean setNameIdPolicy, Boolean stay) throws IOException, SettingsException {
 		Map<String, String> parameters = new HashMap<String, String>();
 
 		AuthnRequest authnRequest = new AuthnRequest(settings, forceAuthn, isPassive, setNameIdPolicy);
@@ -282,6 +282,9 @@ public class Auth {
 			parameters.put("SigAlg", sigAlg);
 			parameters.put("Signature", signature);
 		}
+
+		if (extraParams != null)
+			parameters.putAll(extraParams);
 
 		String ssoUrl = getSSOurl();
 		lastRequestId = authnRequest.getId();
@@ -314,9 +317,31 @@ public class Auth {
 	 * @throws SettingsException
 	 */
 	public void login(String relayState, Boolean forceAuthn, Boolean isPassive, Boolean setNameIdPolicy) throws IOException, SettingsException {
-		login(relayState,forceAuthn, isPassive, setNameIdPolicy, false);
+		login(relayState, null, forceAuthn, isPassive, setNameIdPolicy);
 	}
 		
+	/**
+	 * Initiates the SSO process.
+	 *
+	 * @param relayState
+	 *				The RelayState parameter to send with your SAMLRequest.
+	 *				Will be a self-routed URL when null, or not be appended at all when an empty string is provided
+	 * @param extraParams
+	 *				Additional request parameters to send with the authnrequest
+	 * @param forceAuthn
+	 *				When true the AuthNRequest will set the ForceAuthn='true'
+	 * @param isPassive
+	 *				When true the AuthNRequest will set the IsPassive='true'
+	 * @param setNameIdPolicy
+	 *            When true the AuthNRequest will set a nameIdPolicy
+	 *
+	 * @throws IOException
+	 * @throws SettingsException
+	 */
+	public void login(String relayState, Map<String, String> extraParams, Boolean forceAuthn, Boolean isPassive, Boolean setNameIdPolicy) throws IOException, SettingsException {
+		login(relayState, extraParams, forceAuthn, isPassive, setNameIdPolicy, false);
+	}
+
 	/**
 	 * Initiates the SSO process.
 	 *
@@ -362,7 +387,7 @@ public class Auth {
 	 * @throws XMLEntityException
 	 * @throws SettingsException
 	 */
-	public String logout(String returnTo, String nameId, String sessionIndex, Boolean stay, String nameidFormat) throws IOException, XMLEntityException, SettingsException {
+	public String logout(String returnTo, String nameId, String sessionIndex, Boolean stay, String nameidFormat, Map<String, String> extraParams) throws IOException, XMLEntityException, SettingsException {
 		Map<String, String> parameters = new HashMap<String, String>();
 
 		if (!settings.isSendNameIdInLogout())
@@ -390,6 +415,9 @@ public class Auth {
 			parameters.put("SigAlg", sigAlg);
 			parameters.put("Signature", signature);
 		}
+
+		if (extraParams != null)
+			parameters.putAll(extraParams);
 
 		String sloUrl = getSLOurl();
 		lastRequestId = logoutRequest.getId();
@@ -421,7 +449,7 @@ public class Auth {
 	 * @throws SettingsException
 	 */
 	public String logout(String returnTo, String nameId, String sessionIndex, Boolean stay) throws IOException, XMLEntityException, SettingsException {
-		return logout(returnTo, nameId, sessionIndex, stay, null);
+		return logout(returnTo, nameId, sessionIndex, stay, null, null);
 	}
 
 	/**
@@ -441,7 +469,7 @@ public class Auth {
 	 * @throws SettingsException
 	 */
 	public void logout(String returnTo, String nameId, String sessionIndex, String nameidFormat) throws IOException, XMLEntityException, SettingsException {
-		logout(returnTo, nameId, sessionIndex, false, nameidFormat);
+		logout(returnTo, nameId, sessionIndex, false, nameidFormat, null);
 	}
 
 	/**
@@ -460,7 +488,7 @@ public class Auth {
 	 * @throws SettingsException
 	 */
 	public void logout(String returnTo, String nameId, String sessionIndex) throws IOException, XMLEntityException, SettingsException {
-		logout(returnTo, nameId, sessionIndex, false, null);
+		logout(returnTo, nameId, sessionIndex, false, null, null);
 	}
 
 	/**

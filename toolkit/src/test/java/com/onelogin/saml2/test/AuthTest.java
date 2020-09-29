@@ -1093,12 +1093,12 @@ public class AuthTest {
 		settings.setAuthnRequestsSigned(false);
 
 		Auth auth = new Auth(settings, request, response);
-		String target = auth.login("", false, false, false, true);
+		String target = auth.login("", null, false, false, false, true);
 		assertThat(target, startsWith("https://pitbulk.no-ip.org/simplesaml/saml2/idp/SSOService.php?SAMLRequest="));
 		assertThat(target, not(containsString("&RelayState=")));
 
 		String relayState = "http://localhost:8080/expected.jsp";
-		target = auth.login(relayState, false, false, false, true);
+		target = auth.login(relayState, null, false, false, false, true);
 		assertThat(target, startsWith("https://pitbulk.no-ip.org/simplesaml/saml2/idp/SSOService.php?SAMLRequest="));
 		assertThat(target, containsString("&RelayState=http%3A%2F%2Flocalhost%3A8080%2Fexpected.jsp"));		
 	}
@@ -1694,7 +1694,7 @@ public class AuthTest {
 		Saml2Settings settings = new SettingsBuilder().fromFile("config/config.min.properties").build();
 
 		Auth auth = new Auth(settings, request, response);
-		String targetSSOURL = auth.login(null, false, false, false, true);
+		String targetSSOURL = auth.login(null, null, false, false, false, true);
 		String authNRequestXML = auth.getLastRequestXML();
 		assertThat(targetSSOURL, containsString(Util.urlEncoder(Util.deflatedBase64encoded(authNRequestXML))));
 	}
