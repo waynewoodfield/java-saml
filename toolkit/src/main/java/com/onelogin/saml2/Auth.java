@@ -266,11 +266,7 @@ public class Auth {
 		
 		parameters.put("SAMLRequest", samlRequest);
 
-		if (relayState == null) {
-			relayState = ServletUtils.getSelfRoutedURLNoQuery(request);
-		}
-
-		if (!relayState.isEmpty()) {
+		if (StringUtils.isNotEmpty(relayState)) {
 			parameters.put("RelayState", relayState);
 		}
 
@@ -393,7 +389,7 @@ public class Auth {
 		if (!settings.isSendNameIdInLogout())
 			nameId = null;
 
-		LogoutRequest logoutRequest = new LogoutRequest(settings, null, nameId, sessionIndex, nameidFormat);
+		LogoutRequest logoutRequest = new LogoutRequest(settings, nameId, sessionIndex, nameidFormat);
 		String samlLogoutRequest = logoutRequest.getEncodedLogoutRequest();
 		parameters.put("SAMLRequest", samlLogoutRequest);
 
@@ -677,7 +673,33 @@ public class Auth {
 			LOGGER.error("processSLO error." + errorMsg);
 			throw new Error(errorMsg, Error.SAML_LOGOUTMESSAGE_NOT_FOUND);
 		}
-	}	
+	}
+
+	public void processSLOResponse(String inResponseTo, String relayState) throws IOException, SettingsException
+	{
+		LogoutResponse logoutResponse = new LogoutResponse(settings);
+		logoutResponse.build(inResponseTo);
+		String samlLogoutResponse = logoutResponse.getEncodedLogoutResponse();
+
+		Map<String, String> parameters = new LinkedHashMap<>();
+		parameters.put("SAMLResponse", samlLogoutResponse);
+
+		if (relayState != null) {
+			parameters.put("RelayState", relayState);
+		}
+
+		if (settings.getLogoutResponseSigned()) {
+			String sigAlg = settings.getSignatureAlgorithm();
+			String signature = this.buildResponseSignature(samlLogoutResponse, relayState, sigAlg);
+
+			parameters.put("SigAlg", sigAlg);
+			parameters.put("Signature", signature);
+		}
+
+		String sloUrl = settings.getSpSingleLogoutServiceUrl().toString();
+		LOGGER.debug("Logout response sent to " + sloUrl + " --> " + samlLogoutResponse);
+		ServletUtils.sendRedirect(response, sloUrl, parameters);
+	}
 
     /**
      * Process the SAML Logout Response / Logout Request sent by the IdP.

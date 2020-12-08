@@ -57,7 +57,7 @@ public class LogoutResponse {
 	/**
      * HttpRequest object to be processed (Contains GET and POST parameters, request URL, ...).
      */
-	private final HttpRequest request;
+	private HttpRequest request;
 
 	/**
 	 * URL of the current host + current view
@@ -79,6 +79,8 @@ public class LogoutResponse {
 	 */
 	private String error;
 
+	private boolean idp;
+
 	/**
 	 * Constructs the LogoutResponse object.
 	 *
@@ -91,6 +93,7 @@ public class LogoutResponse {
 	public LogoutResponse(Saml2Settings settings, HttpRequest request) {
 		this.settings = settings;
 		this.request = request;
+		this.idp = false;
 
 		String samlLogoutResponse = null;
 		if (request != null) {
@@ -102,6 +105,12 @@ public class LogoutResponse {
 			logoutResponseString = Util.base64decodedInflated(samlLogoutResponse);
 			logoutResponseDocument = Util.loadXML(logoutResponseString);
 		}
+	}
+
+	public LogoutResponse(Saml2Settings settings)
+	{
+		this.settings = settings;
+		this.idp = true;
 	}
 
 	/**
@@ -434,7 +443,7 @@ public class LogoutResponse {
 		issueInstant = Calendar.getInstance();
 		this.inResponseTo = inResponseTo;
 
-		StrSubstitutor substitutor = generateSubstitutor(settings);
+		StrSubstitutor substitutor = generateSubstitutor();
 		this.logoutResponseString = substitutor.replace(getLogoutResponseTemplate());
 	}
 
@@ -449,12 +458,9 @@ public class LogoutResponse {
 	/**
 	 * Substitutes LogoutResponse variables within a string by values.
 	 *
-	 * @param settings
-	 * 				Saml2Settings object. Setting data
-	 *
 	 * @return the StrSubstitutor object of the LogoutResponse
 	 */
-	private StrSubstitutor generateSubstitutor(Saml2Settings settings) {
+	private StrSubstitutor generateSubstitutor() {
 		Map<String, String> valueMap = new HashMap<String, String>();
 
 		valueMap.put("id", id);
@@ -463,7 +469,7 @@ public class LogoutResponse {
 		valueMap.put("issueInstant", issueInstantString);
 
 		String destinationStr = "";
-		URL slo =  settings.getIdpSingleLogoutServiceResponseUrl();
+		URL slo =  idp ? settings.getSpSingleLogoutServiceUrl() : settings.getIdpSingleLogoutServiceResponseUrl();
 		if (slo != null) {
 			destinationStr = " Destination=\"" + slo.toString() + "\"";
 		}
@@ -474,8 +480,7 @@ public class LogoutResponse {
 			inResponseStr = " InResponseTo=\"" + inResponseTo + "\"";
 		}
 		valueMap.put("inResponseStr", inResponseStr);
-
-		valueMap.put("issuer", settings.getSpEntityId());
+		valueMap.put("issuer", idp ? settings.getIdpEntityId() : settings.getSpEntityId());
 
 		return new StrSubstitutor(valueMap);
 	}

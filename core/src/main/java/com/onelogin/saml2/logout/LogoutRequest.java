@@ -43,7 +43,8 @@ public class LogoutRequest {
 	/**
 	 * SAML LogoutRequest string
 	 */
-	private final String logoutRequestString;
+	private String logoutRequestString;
+	private Document logoutRequestDocument;
 
 	/**
 	 * SAML LogoutRequest ID.
@@ -53,12 +54,12 @@ public class LogoutRequest {
 	/**
      * Settings data.
      */
-	private final Saml2Settings settings;
+	private Saml2Settings settings;
 
 	/**
      * HttpRequest object to be processed (Contains GET and POST parameters, request URL, ...).
      */
-	private final HttpRequest request;
+	private HttpRequest request;
 
 	/**
      * NameID.
@@ -90,13 +91,13 @@ public class LogoutRequest {
 	 */ 
 	private String error;
 
+	private boolean idp;
+
 	/**
 	 * Constructs the LogoutRequest object.
 	 *
 	 * @param settings
 	 *              OneLogin_Saml2_Settings
-	 * @param request
-     *              the HttpRequest object to be processed (Contains GET and POST parameters, request URL, ...).
 	 * @param nameId
 	 *              The NameID that will be set in the LogoutRequest.
 	 * @param sessionIndex
@@ -106,30 +107,37 @@ public class LogoutRequest {
 	 * @throws XMLEntityException 
 	 *
 	 */
-	public LogoutRequest(Saml2Settings settings, HttpRequest request, String nameId, String sessionIndex, String nameIdFormat) throws XMLEntityException {
+	public LogoutRequest(Saml2Settings settings, String nameId, String sessionIndex, String nameIdFormat) throws XMLEntityException {
 		this.settings = settings;
+		id = Util.generateUniqueID();
+		issueInstant = Calendar.getInstance();
+		this.nameId = nameId;
+		this.nameIdFormat = nameIdFormat;
+		this.sessionIndex = sessionIndex;
+
+		StrSubstitutor substitutor = generateSubstitutor(settings);
+		logoutRequestString = substitutor.replace(getLogoutRequestTemplate());
+		this.idp = false;
+	}
+
+	public LogoutRequest(Saml2Settings settings, HttpRequest request) {
+		this(request);
+		this.settings = settings;
+		this.idp = false;
+	}
+
+	public LogoutRequest(HttpRequest request) {
 		this.request = request;
 
-		String samlLogoutRequest = null;
+		String samlLogoutRequest = request.getParameter("SAMLRequest");
+		currentUrl = request.getRequestURL();
+		logoutRequestString = Util.base64decodedInflated(samlLogoutRequest);
+		logoutRequestDocument = Util.loadXML(logoutRequestString);
 
-		if (request != null) {
-			samlLogoutRequest = request.getParameter("SAMLRequest");
-			currentUrl = request.getRequestURL();
-		}
-
-		if (samlLogoutRequest == null) {
-			id = Util.generateUniqueID();
-			issueInstant = Calendar.getInstance();
-			this.nameId = nameId;
-			this.nameIdFormat = nameIdFormat;
-			this.sessionIndex = sessionIndex;
-
-			StrSubstitutor substitutor = generateSubstitutor(settings);
-			logoutRequestString = substitutor.replace(getLogoutRequestTemplate());
-		} else {
-			logoutRequestString = Util.base64decodedInflated(samlLogoutRequest);
-			id = getId(logoutRequestString);
-		}
+		Element rootElement = logoutRequestDocument.getDocumentElement();
+		rootElement.normalize();
+		id = rootElement.getAttribute("ID");
+		this.idp = true;
 	}
 
 	/**
@@ -137,8 +145,6 @@ public class LogoutRequest {
 	 *
 	 * @param settings
 	 *              OneLogin_Saml2_Settings
-	 * @param request
-     *              the HttpRequest object to be processed (Contains GET and POST parameters, request URL, ...).
 	 * @param nameId
 	 *              The NameID that will be set in the LogoutRequest.
 	 * @param sessionIndex
@@ -146,8 +152,8 @@ public class LogoutRequest {
 	 *
 	 * @throws XMLEntityException
 	 */
-	public LogoutRequest(Saml2Settings settings, HttpRequest request, String nameId, String sessionIndex) throws XMLEntityException {
-		this(settings, request, nameId, sessionIndex, null);
+	public LogoutRequest(Saml2Settings settings, String nameId, String sessionIndex) throws XMLEntityException {
+		this(settings, nameId, sessionIndex, null);
 	}
 
 	/**
@@ -159,21 +165,7 @@ public class LogoutRequest {
 	 * @throws XMLEntityException 
 	 */
 	public LogoutRequest(Saml2Settings settings) throws XMLEntityException {
-		this(settings, null, null, null);
-	}
-
-	/**
-	 * Constructs the LogoutRequest object.
-	 *
-	 * @param settings
-	 *            OneLogin_Saml2_Settings
-	 * @param request
-     *              the HttpRequest object to be processed (Contains GET and POST parameters, request URL, ...).
-     *
-	 * @throws XMLEntityException 
-	 */
-	public LogoutRequest(Saml2Settings settings, HttpRequest request) throws XMLEntityException {
-		this(settings, request, null, null);
+		this(settings, null, null);
 	}
 
 	/**
@@ -308,8 +300,6 @@ public class LogoutRequest {
 
 			String signature = request.getParameter("Signature");
 
-			Document logoutRequestDocument = Util.loadXML(logoutRequestString);
-
 			if (settings.isStrict()) {
 				Element rootElement = logoutRequestDocument.getDocumentElement();
 				rootElement.normalize();				
@@ -345,9 +335,10 @@ public class LogoutRequest {
 
 				// Check the issuer
 				String issuer = getIssuer(logoutRequestDocument);
-				if (issuer != null && (issuer.isEmpty() || !issuer.equals(settings.getIdpEntityId()))) {
+				String expectedIssuer = idp ? settings.getSpEntityId() : settings.getIdpEntityId();
+				if (issuer != null && (issuer.isEmpty() || !issuer.equals(expectedIssuer))) {
 					throw new ValidationError(
-							String.format("Invalid issuer in the Logout Request. Was '%s', but expected '%s'", issuer, settings.getIdpEntityId()),
+							String.format("Invalid issuer in the Logout Request. Was '%s', but expected '%s'", issuer, expectedIssuer),
 							ValidationError.WRONG_ISSUER
 					);
 				}
@@ -566,6 +557,10 @@ public class LogoutRequest {
     	return getNameId(samlLogoutRequestString, null);
     }
     
+	public String getIssuer() throws XPathExpressionException
+	{
+		return getIssuer(logoutRequestDocument);
+	}
 	/**
 	 * Gets the Issuer from Logout Request Document.
 	 * 
@@ -657,5 +652,10 @@ public class LogoutRequest {
 	public String getId()
 	{
 		return id;
+	}
+
+	public void setSettings(Saml2Settings settings)
+	{
+		this.settings = settings;
 	}
 }

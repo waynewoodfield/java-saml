@@ -2,13 +2,14 @@ package com.onelogin.saml2.authn;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import com.onelogin.saml2.exception.SettingsException;
+import com.onelogin.saml2.exception.ValidationError;
+import com.onelogin.saml2.http.HttpRequest;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,13 @@ import com.onelogin.saml2.settings.Saml2Settings;
 import com.onelogin.saml2.model.Organization;
 import com.onelogin.saml2.util.Constants;
 import com.onelogin.saml2.util.Util;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathExpressionException;
 
 /**
  * AuthNRequest class of OneLogin's Java Toolkit.
@@ -32,17 +40,18 @@ public class AuthnRequest {
 	/**
 	 * SAML AuthNRequest string
 	 */
-	private final String authnRequestString;
+	private String authnRequestString;
+	private Document authnRequestDocument;
 
 	/**
 	 * SAML AuthNRequest ID.
 	 */
-	private final String id;
+	private String id;
 
 	/**
      * Settings data.
      */
-	private final Saml2Settings settings;
+	private Saml2Settings settings;
 
 	/**
 	 * When true the AuthNRequest will set the ForceAuthn='true'
@@ -59,11 +68,35 @@ public class AuthnRequest {
 	 */
 	private final boolean setNameIdPolicy;
 
+	private String currentUrl;
+	private String issuer;
+	private String error;
+
 	
 	/**
 	 * Time stamp that indicates when the AuthNRequest was created
 	 */
 	private final Calendar issueInstant;
+
+	public AuthnRequest(HttpRequest request) throws XPathExpressionException, ParserConfigurationException, SAXException, IOException, SettingsException, ValidationError {
+		loadXmlFromBase64(request.getParameter("SAMLRequest"));
+		Element root = authnRequestDocument.getDocumentElement();
+		this.id = root.getAttribute("ID");
+		forceAuthn = "true".equals(root.getAttribute("ForceAuthn"));
+		isPassive = "true".equals(root.getAttribute("IsPassive"));
+		issueInstant = Calendar.getInstance();
+		issueInstant.setTime(Util.parseDateTime(root.getAttribute("IssueInstant")).toDate());
+		setNameIdPolicy = false;
+		currentUrl = request.getRequestURL();
+
+		NodeList responseIssuer = Util.query(authnRequestDocument, "/samlp:AuthnRequest/saml:Issuer");
+		if (responseIssuer == null || responseIssuer.getLength() == 0)
+			throw new ValidationError("Issuer of the Assertion not found or multiple.", ValidationError.ISSUER_NOT_FOUND_IN_ASSERTION);
+		else if (responseIssuer.getLength() > 1)
+			throw new ValidationError("Issuer of the Response is multiple.", ValidationError.ISSUER_MULTIPLE_IN_RESPONSE);
+		else
+			this.issuer = responseIssuer.item(0).getTextContent();
+	}
 
 	/**
 	 * Constructs the AuthnRequest object.
@@ -112,14 +145,55 @@ public class AuthnRequest {
 		LOGGER.debug("AuthNRequest --> " + authnRequestString);
 	}
 
-	/**
-	 * @return the base64 encoded unsigned AuthnRequest (deflated or not)
-	 *
-	 * @param deflated 
-     *				If deflated or not the encoded AuthnRequest
+	private void loadXmlFromBase64(String samlRequest) throws ValidationError
+	{
+		try
+		{
+			authnRequestString = Util.base64decodedInflated(samlRequest);
+		}
+		catch (Exception e)
+		{
+			authnRequestString = new String(Util.base64decoder(samlRequest), StandardCharsets.UTF_8);
+		}
+
+		authnRequestDocument = Util.loadXML(authnRequestString);
+		if (authnRequestDocument == null)
+			throw new ValidationError("SAMLRequest could not be processed", ValidationError.INVALID_XML_FORMAT);
+	}
+
+	public boolean isValid() {
+		if (!settings.isStrict())
+			return true;
+
+		try
+		{
+			// Check destination
+			Element root = authnRequestDocument.getDocumentElement();
+			if (root.hasAttribute("Destination")) {
+				String destinationUrl = root.getAttribute("Destination");
+				if (destinationUrl != null) {
+					if (destinationUrl.isEmpty()) {
+						throw new ValidationError("The request has an empty Destination value", ValidationError.EMPTY_DESTINATION);
+					} else if (!destinationUrl.equals(currentUrl)) {
+						throw new ValidationError("The request was received at " + currentUrl + " instead of " + destinationUrl, ValidationError.WRONG_DESTINATION);
+					}
+				}
+			}
+		} catch (ValidationError e) {
+			error = e.getMessage();
+			return false;
+		}
+		return true;
+	}
+
+		/**
+     * @return the base64 encoded unsigned AuthnRequest (deflated or not)
      *
-	 * @throws IOException 
-	 */
+     * @param deflated
+       *				If deflated or not the encoded AuthnRequest
+       *
+     * @throws IOException
+     */
 	public String getEncodedAuthnRequest(Boolean deflated) throws IOException {
 		String encodedAuthnRequest;
 		if (deflated == null) {
@@ -159,7 +233,7 @@ public class AuthnRequest {
 	 */ 
 	private StrSubstitutor generateSubstitutor(Saml2Settings settings) {
 
-		Map<String, String> valueMap = new HashMap<String, String>();
+		Map<String, String> valueMap = new HashMap<>();
 
 		String forceAuthnStr = "";
 		if (forceAuthn) {
@@ -234,11 +308,26 @@ public class AuthnRequest {
 		return template;
 	}
 
+	public void setSettings(Saml2Settings settings)
+	{
+		this.settings = settings;
+	}
+
 	/**
 	 * @return the generated id of the AuthnRequest message
 	 */
 	public String getId()
 	{
 		return id;
+	}
+
+	public String getIssuer()
+	{
+		return issuer;
+	}
+
+	public String getError()
+	{
+		return error;
 	}
 }

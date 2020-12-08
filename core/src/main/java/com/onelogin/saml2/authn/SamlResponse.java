@@ -341,7 +341,7 @@ public class SamlResponse {
 				}
 				
 				// Check destination
-				if (rootElement.hasAttribute("Destination")) {
+				if (settings.isValidateRecipient() && rootElement.hasAttribute("Destination")) {
 					String destinationUrl = rootElement.getAttribute("Destination");
 					if (destinationUrl != null) {
 						if (destinationUrl.isEmpty()) {
@@ -357,7 +357,7 @@ public class SamlResponse {
 				if (settings.isValidateAudience()) {
 					List<String> validAudiences = this.getAudiences();
 					if (!validAudiences.isEmpty() && !validAudiences.contains(settings.getSpEntityId())) {
-						throw new ValidationError(settings.getSpEntityId() + " is not a valid audience for this Response", ValidationError.WRONG_AUDIENCE);
+						throw new ValidationError("Invalid audience", ValidationError.WRONG_AUDIENCE);
 					}
 				}
 
