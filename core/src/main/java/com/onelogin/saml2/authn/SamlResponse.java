@@ -186,7 +186,7 @@ public class SamlResponse {
 		substitutionMap.put("nowUTC", df.format(issueInstant));
 		substitutionMap.put("nameidFormat", nameIdData.get("Format"));
 		substitutionMap.put("nameid", nameIdData.get("Value"));
-		substitutionMap.put("inResponseTo", " InResponseTo=\"" + inResponseTo + "\"");
+		substitutionMap.put("inResponseTo", inResponseTo == null ? "" : " InResponseTo=\"" + inResponseTo + "\"");
 		substitutionMap.put("preExpiration", df.format(preExpiration));
 		substitutionMap.put("expiration", df.format(expiration));
 		substitutionMap.put("destinationUrl", this.currentUrl);
