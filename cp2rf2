@@ -1,0 +1,1 @@
+cp ~/src/java-saml/samples/java-saml-tookit-jspsample/target/java-saml-tookit-jspsample-2.1.1-SNAPSHOT/WEB-INF/lib/java-saml-* ~/git/rainfocus2/lib/master/
