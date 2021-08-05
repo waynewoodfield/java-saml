@@ -104,7 +104,7 @@ public class Auth {
 	/**
      * User attributes data.
      */
-	private Map<String, List<String>> attributes = new HashMap<String, List<String>>();
+	private Map<String, List<String>> attributes = new HashMap<>();
 
 	/**
      * If user is authenticated.
@@ -114,12 +114,13 @@ public class Auth {
 	/**
      * Stores any error.
      */
-	private List<String> errors = new ArrayList<String>();
+	private List<String> errors = new ArrayList<>();
 
 	/**
      * Reason of the last error.
      */
 	private String errorReason;
+	private int errorCode;
 
 	/**
 	 * The id of the last request (Authn or Logout) generated
@@ -258,7 +259,7 @@ public class Auth {
 	 * @throws SettingsException
 	 */
 	public String login(String relayState, Map<String, String> extraParams, Boolean forceAuthn, Boolean isPassive, Boolean setNameIdPolicy, Boolean stay) throws IOException, SettingsException {
-		Map<String, String> parameters = new HashMap<String, String>();
+		Map<String, String> parameters = new HashMap<>();
 
 		AuthnRequest authnRequest = new AuthnRequest(settings, forceAuthn, isPassive, setNameIdPolicy);
 
@@ -384,7 +385,7 @@ public class Auth {
 	 * @throws SettingsException
 	 */
 	public String logout(String returnTo, String nameId, String sessionIndex, Boolean stay, String nameidFormat, Map<String, String> extraParams) throws IOException, XMLEntityException, SettingsException {
-		Map<String, String> parameters = new HashMap<String, String>();
+		Map<String, String> parameters = new HashMap<>();
 
 		if (!settings.isSendNameIdInLogout())
 			nameId = null;
@@ -545,6 +546,7 @@ public class Auth {
      */
 	public void processResponse(String requestId) throws Exception {
 		authenticated = false;
+		errors.clear();
 		final HttpRequest httpRequest = ServletUtils.makeHttpRequest(this.request);
 		final String samlResponseParameter = httpRequest.getParameter("SAMLResponse");
 
@@ -568,6 +570,7 @@ public class Auth {
 				LOGGER.error("processResponse error. invalid_response");
 				LOGGER.debug(" --> " + samlResponseParameter);
 				errorReason = samlResponse.getError();
+				errorCode = samlResponse.getErrorCode();
 			}
 		} else {
 			errors.add("invalid_binding");
@@ -602,6 +605,7 @@ public class Auth {
 		final String samlRequestParameter = httpRequest.getParameter("SAMLRequest");
 		final String samlResponseParameter = httpRequest.getParameter("SAMLResponse");
 
+		errors.clear();
 		if (samlResponseParameter != null) {
 			LogoutResponse logoutResponse = new LogoutResponse(settings, httpRequest);
 			lastResponse = logoutResponse.getLogoutResponseXml();
@@ -609,7 +613,8 @@ public class Auth {
 				errors.add("invalid_logout_response");
 				LOGGER.error("processSLO error. invalid_logout_response");
 				LOGGER.debug(" --> " + samlResponseParameter);
-				errorReason = logoutResponse.getError();				
+				errorReason = logoutResponse.getError();
+				errorCode = logoutResponse.getErrorCode();
 			} else {
 				String status = logoutResponse.getStatus();				
 				if (status == null || !status.equals(Constants.STATUS_SUCCESS)) {
@@ -632,6 +637,7 @@ public class Auth {
 				LOGGER.error("processSLO error. invalid_logout_request");
 				LOGGER.debug(" --> " + samlRequestParameter);
 				errorReason = logoutRequest.getError();
+				errorCode = logoutRequest.getErrorCode();
 			} else {
 				lastMessageId = logoutRequest.getId();
 				LOGGER.debug("processSLO success --> " + samlRequestParameter);
@@ -646,7 +652,7 @@ public class Auth {
 
 				String samlLogoutResponse = logoutResponseBuilder.getEncodedLogoutResponse();
 
-				Map<String, String> parameters = new LinkedHashMap<String, String>();
+				Map<String, String> parameters = new LinkedHashMap<>();
 
 				parameters.put("SAMLResponse", samlLogoutResponse);
 
@@ -721,7 +727,7 @@ public class Auth {
 	 * @return the list of the names of the SAML attributes.
 	 */
 	public final List<String> getAttributesName() {
-		return new ArrayList<String>(attributes.keySet());
+		return new ArrayList<>(attributes.keySet());
 	}
 
 	/**
@@ -808,6 +814,11 @@ public class Auth {
     public String getLastErrorReason()
     {
     	return errorReason;
+    }
+
+    public int getLastErrorCode()
+    {
+    	return errorCode;
     }
 
 	/**

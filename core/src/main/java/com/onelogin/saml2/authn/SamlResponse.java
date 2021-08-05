@@ -76,6 +76,7 @@ public class SamlResponse {
 	/**
 	 * After validation, if it fails this property has the cause of the problem
 	 */ 
+	private int errorCode;
 	private String error;
 
 	private Map<String, String> nameIdData;
@@ -248,11 +249,11 @@ public class SamlResponse {
 
 		try {
 			if (samlResponseDocument == null) {
-				throw new Exception("SAML Response is not loaded");
+				throw new ValidationError("SAML Response is not loaded", ValidationError.MISSING_ASSERTION);
 			}
 
 			if (this.currentUrl == null || this.currentUrl.isEmpty()) {
-				throw new Exception("The URL of the current host was not established");
+				throw new ValidationError("The URL of the current host was not established", ValidationError.NO_LOCAL_URL);
 			}
 
 			Element rootElement = samlResponseDocument.getDocumentElement();
@@ -326,7 +327,7 @@ public class SamlResponse {
 				
 				// Validate Assertion timestamps
 				if (settings.isValidateTimes() && !this.validateTimestamps()) {
-					throw new Exception("Timing issues (please check your clock settings)");
+					throw new ValidationError("Timing issues (please check your clock settings)", ValidationError.TIMING_ERROR);
 				}
 
 				// Validate AuthnStatement element exists and is unique
@@ -416,7 +417,14 @@ public class SamlResponse {
 
 			LOGGER.debug("SAMLResponse validated --> " + samlResponseString);
 			return true;
-		} catch (Exception e) {
+		} catch (XPathExpressionException e) {
+			errorCode = ValidationError.INVALID_XML_FORMAT;
+			error = e.getMessage();
+			LOGGER.debug("SAMLResponse invalid --> " + samlResponseString);
+			LOGGER.error(error);
+			return false;
+		} catch (ValidationError e) {
+			errorCode = e.getErrorCode();
 			error = e.getMessage();
 			LOGGER.debug("SAMLResponse invalid --> " + samlResponseString);
 			LOGGER.error(error);
@@ -1061,10 +1069,11 @@ public class SamlResponse {
      * @return the cause of the validation error 
      */
 	public String getError() {
-		if (error != null) {
-			return error;
-		}
-		return null;
+		return error;
+	}
+
+	public int getErrorCode() {
+		return errorCode;
 	}
 
 	/**

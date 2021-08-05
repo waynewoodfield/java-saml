@@ -1185,7 +1185,7 @@ public final class Util {
 	 * @throws InvalidKeyException 
 	 * @throws SignatureException 
 	 */
-	public static Boolean validateBinarySignature(String signedQuery, byte[] signature, X509Certificate cert, String signAlg) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, SignatureException {
+	public static Boolean validateBinarySignature(String signedQuery, byte[] signature, X509Certificate cert, String signAlg) {
 		Boolean valid = false;
 		try {
 			org.apache.xml.security.Init.init();

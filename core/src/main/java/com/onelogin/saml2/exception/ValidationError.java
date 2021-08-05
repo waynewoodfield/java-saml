@@ -53,7 +53,11 @@ public class ValidationError extends Exception {
 	public static final int NOT_SUPPORTED = 46;
 	public static final int KEY_ALGORITHM_ERROR = 47;
 	public static final int MISSING_ENCRYPTED_ELEMENT = 48;
-    
+	public static final int TIMING_ERROR = 49;
+	public static final int NO_LOCAL_URL = 50;
+	public static final int MISSING_ASSERTION = 51;
+	public static final int CERT_NOT_FOUND = 52;
+
     private int errorCode;
 	
 	public ValidationError(String message, int errorCode) {

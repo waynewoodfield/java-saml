@@ -15,7 +15,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.onelogin.saml2.exception.SettingsException;
 import com.onelogin.saml2.exception.ValidationError;
 import com.onelogin.saml2.http.HttpRequest;
 import com.onelogin.saml2.settings.Saml2Settings;
@@ -78,6 +77,7 @@ public class LogoutResponse {
 	 * After validation, if it fails this property has the cause of the problem
 	 */
 	private String error;
+	private int errorCode;
 
 	private boolean idp;
 
@@ -180,7 +180,7 @@ public class LogoutResponse {
 			}
 
 			if (this.currentUrl == null || this.currentUrl.isEmpty()) {
-				throw new Exception("The URL of the current host was not established");
+				throw new ValidationError("The URL of the current host was not established", ValidationError.NO_LOCAL_URL);
 			}
 
 			String signature = settings.isSpSingleLogoutServiceBindingRedirect() ? request.getParameter("Signature") : null;
@@ -242,7 +242,7 @@ public class LogoutResponse {
 			if (signature != null && !signature.isEmpty()) {
 				X509Certificate cert = settings.getIdpx509cert();
 				if (cert == null) {
-					throw new SettingsException("In order to validate the sign on the Logout Response, the x509cert of the IdP is required", SettingsException.CERT_NOT_FOUND);
+					throw new ValidationError("In order to validate the sign on the Logout Response, the x509cert of the IdP is required", ValidationError.CERT_NOT_FOUND);
 				}
 
 				String signAlg = request.getParameter("SigAlg");
@@ -276,7 +276,14 @@ public class LogoutResponse {
 
 			LOGGER.debug("LogoutRequest validated --> " + logoutResponseString);
 			return true;
-		} catch (Exception e) {
+		} catch (XPathExpressionException e) {
+			errorCode = ValidationError.INVALID_XML_FORMAT;
+			error = e.getMessage();
+			LOGGER.debug("LogoutResponse invalid --> " + logoutResponseString);
+			LOGGER.error(error);
+			return false;
+		} catch (ValidationError e) {
+			errorCode = e.getErrorCode();
 			error = e.getMessage();
 			LOGGER.debug("LogoutResponse invalid --> " + logoutResponseString);
 			LOGGER.error(error);
@@ -285,9 +292,9 @@ public class LogoutResponse {
 	}
 
 	public ArrayList<String> processSignedElements() throws XPathExpressionException, ValidationError {
-		ArrayList<String> signedElements = new ArrayList<String>();
-		ArrayList<String> verifiedSeis = new ArrayList<String>();
-		ArrayList<String> verifiedIds = new ArrayList<String>();
+		ArrayList<String> signedElements = new ArrayList<>();
+		ArrayList<String> verifiedSeis = new ArrayList<>();
+		ArrayList<String> verifiedIds = new ArrayList<>();
 
 		NodeList signNodes = query("//ds:Signature");
 		for (int i = 0; i < signNodes.getLength(); i++) {
@@ -358,7 +365,7 @@ public class LogoutResponse {
 			return false;
 		}
 
-		Map<String, Integer> occurrences = new HashMap<String, Integer>();
+		Map<String, Integer> occurrences = new HashMap<>();
 		for (String e : signedElements) {
 			if (occurrences.containsKey(e)) {
 				occurrences.put(e, occurrences.get(e) + 1);
@@ -461,7 +468,7 @@ public class LogoutResponse {
 	 * @return the StrSubstitutor object of the LogoutResponse
 	 */
 	private StrSubstitutor generateSubstitutor() {
-		Map<String, String> valueMap = new HashMap<String, String>();
+		Map<String, String> valueMap = new HashMap<>();
 
 		valueMap.put("id", id);
 
@@ -509,5 +516,9 @@ public class LogoutResponse {
      */
 	public String getError() {
 		return error;
+	}
+
+	public int getErrorCode() {
+		return errorCode;
 	}
 }

@@ -90,6 +90,7 @@ public class LogoutRequest {
 	 * After validation, if it fails this property has the cause of the problem
 	 */ 
 	private String error;
+	private int errorCode;
 
 	private boolean idp;
 
@@ -214,7 +215,7 @@ public class LogoutRequest {
 	 * @return the StrSubstitutor object of the LogoutRequest 
 	 */
 	private StrSubstitutor generateSubstitutor(Saml2Settings settings) {
-		Map<String, String> valueMap = new HashMap<String, String>();
+		Map<String, String> valueMap = new HashMap<>();
 
 		valueMap.put("id", id);		
 
@@ -230,7 +231,7 @@ public class LogoutRequest {
 
 		valueMap.put("issuer", settings.getSpEntityId());
 
-		String nameIdFormat = null;
+		String nameIdFormat;
 		String spNameQualifier = null;
 		if (nameId != null) {
 			if (this.nameIdFormat == null) {
@@ -375,7 +376,8 @@ public class LogoutRequest {
 			
 			LOGGER.debug("LogoutRequest validated --> " + logoutRequestString);
 		    return true;	
-		} catch (Exception e) {
+		} catch (ValidationError e) {
+			errorCode = e.getErrorCode();
 			error = e.getMessage();
 			LOGGER.debug("LogoutRequest invalid --> " + logoutRequestString);
 			LOGGER.error(error);
@@ -455,7 +457,7 @@ public class LogoutRequest {
 			throw new ValidationError("No name id found in Logout Request.", ValidationError.NO_NAMEID);
 		}
 		
-		Map<String, String> nameIdData = new HashMap<String, String>();
+		Map<String, String> nameIdData = new HashMap<>();
 		
 		if (nameIdElem != null) {
 			nameIdData.put("Value", nameIdElem.getTextContent());
@@ -611,7 +613,7 @@ public class LogoutRequest {
      */
     public static List<String> getSessionIndexes(Document samlLogoutRequestDocument) throws XPathExpressionException
     {
-        List<String> sessionIndexes = new ArrayList<String>(); 
+        List<String> sessionIndexes = new ArrayList<>();
 
         NodeList nodes = Util.query(samlLogoutRequestDocument, "/samlp:LogoutRequest/samlp:SessionIndex");
 
@@ -644,6 +646,10 @@ public class LogoutRequest {
      */
 	public String getError() {
 		return error;
+	}
+
+	public int getErrorCode() {
+		return errorCode;
 	}
 
 	/**
