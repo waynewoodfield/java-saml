@@ -1458,7 +1458,10 @@ public final class Util {
 	 * @return datetime
 	 */
 	public static DateTime parseDateTime(String dateTime) {
-		
+		// Trim off precision beyond milliseconds
+		while (dateTime != null && dateTime.matches(".*\\.[0-9][0-9][0-9][0-9]+Z"))
+			dateTime = dateTime.substring(0, dateTime.length() - 2) + "Z";
+
 		DateTime parsedData = null;
 		try {
 			parsedData = DATE_TIME_FORMAT.parseDateTime(dateTime);

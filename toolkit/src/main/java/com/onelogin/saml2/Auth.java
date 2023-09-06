@@ -719,21 +719,21 @@ public class Auth {
 	/**
 	 * @return the authenticated
 	 */
-	public final boolean isAuthenticated() {
+	public boolean isAuthenticated() {
 		return authenticated;
 	}
 
 	/**
 	 * @return the list of the names of the SAML attributes.
 	 */
-	public final List<String> getAttributesName() {
+	public List<String> getAttributesName() {
 		return new ArrayList<>(attributes.keySet());
 	}
 
 	/**
 	 * @return the set of SAML attributes.
 	 */
-	public final Map<String, List<String>> getAttributes() {
+	public Map<String, List<String>> getAttributes() {
 		return attributes;
 	}
 
@@ -743,14 +743,14 @@ public class Auth {
 	 *
 	 * @return the attribute value
 	 */
-	public final Collection<String> getAttribute(String name) {
+	public Collection<String> getAttribute(String name) {
 		return attributes.get(name);
 	}
 
     /**
      * @return the nameID of the assertion
      */
-    public final String getNameId()
+    public String getNameId()
     {
         return nameid;
     }
@@ -758,7 +758,7 @@ public class Auth {
     /**
      * @return the nameID Format of the assertion
      */
-    public final String getNameIdFormat()
+    public String getNameIdFormat()
     {
         return nameidFormat;
     }
@@ -766,7 +766,7 @@ public class Auth {
     /**
      * @return the SessionIndex of the assertion
      */
-    public final String getSessionIndex()    
+    public String getSessionIndex()
     {
         return sessionIndex;
     }
@@ -774,7 +774,7 @@ public class Auth {
     /**
      * @return the SessionNotOnOrAfter of the assertion
      */
-	public final DateTime getSessionExpiration()
+	public DateTime getSessionExpiration()
 	{
 	    return sessionExpiration;
 	}

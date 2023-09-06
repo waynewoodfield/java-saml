@@ -1242,7 +1242,7 @@ public class SamlResponse {
 		template.append("<saml:AudienceRestriction>");
 		template.append("<saml:Audience>${audience}</saml:Audience>");
 		template.append("</saml:AudienceRestriction>");
-		template.append("<saml:OneTimeUse/>");
+//		template.append("<saml:OneTimeUse/>");
 		template.append("</saml:Conditions>");
 		template.append("<saml:AuthnStatement AuthnInstant=\"${nowUTC}\">");
 		template.append("<saml:AuthnContext>");
