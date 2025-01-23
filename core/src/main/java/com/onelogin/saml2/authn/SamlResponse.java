@@ -626,22 +626,26 @@ public class SamlResponse {
 		NodeList nodes = this.queryAssertion("/saml:AttributeStatement/saml:Attribute");
 		
 		if (nodes.getLength() != 0) {
+			Map<String, String> nameFormatsByName = new HashMap<>();
 			for (int i = 0; i < nodes.getLength(); i++) {
 				NamedNodeMap attrName = nodes.item(i).getAttributes();
 				String attName = attrName.getNamedItem("Name").getNodeValue();
-				if (attributes.containsKey(attName)) {
-					throw new ValidationError("Found an Attribute element with duplicated Name", ValidationError.DUPLICATED_ATTRIBUTE_NAME_FOUND);
+				String nameFormat = Optional.ofNullable(attrName.getNamedItem("NameFormat")).map(Node::getNodeValue).orElse(null);
+				String previousNameFormat = nameFormatsByName.get(attName);
+				if (nameFormatsByName.containsKey(attName) && Objects.equals(nameFormat, previousNameFormat)) {
+					throw new ValidationError("Attribute \"" + attName + "\" appears in this SAML assertion twice with the same NameFormat", ValidationError.DUPLICATED_ATTRIBUTE_NAME_FOUND);
 				}
-				
-				NodeList childrens = nodes.item(i).getChildNodes();
-
-				List<String> attrValues = new ArrayList<>();
-				for (int j = 0; j < childrens.getLength(); j++) {
-					if ("AttributeValue".equals(childrens.item(j).getLocalName())) {
-						attrValues.add(childrens.item(j).getTextContent());
+				if (previousNameFormat == null || Constants.ATTRNAME_FORMAT_URI.equals(nameFormat)) {
+					NodeList childrens = nodes.item(i).getChildNodes();
+					List<String> attrValues = new ArrayList<>();
+					for (int j = 0; j < childrens.getLength(); j++) {
+						if ("AttributeValue".equals(childrens.item(j).getLocalName())) {
+							attrValues.add(childrens.item(j).getTextContent());
+						}
 					}
+					attributes.put(attName, attrValues);
+					nameFormatsByName.put(attName, nameFormat);
 				}
-				attributes.put(attName, attrValues);
 			}
 			LOGGER.debug("SAMLResponse has attributes: " + attributes.toString());
 		} else {
