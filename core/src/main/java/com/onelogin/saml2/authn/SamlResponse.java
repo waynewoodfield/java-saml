@@ -9,6 +9,7 @@ import java.util.*;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.joda.time.DateTime;
 import org.joda.time.Instant;
@@ -143,7 +144,7 @@ public class SamlResponse {
 				// object to insert its signature in a better place.  There's definitely a way to do this by moving the signature around in
 				// the dom document before we stringify it again.  But I just cheated and did string manipulation here.  Anyone that wants
 				// to do this better sometime, feel free.
-				samlResponse = Util.signPost(samlResponse, key, cert, sigalg, true).toString("UTF-8");
+				samlResponse = Util.signPost(samlResponse, key, cert, sigalg, true);
 				int assertionLocation = samlResponse.indexOf("<saml:Assertion ");
 				int assertionDsigLocation = samlResponse.indexOf("<Signature ", assertionLocation);
 				int endAssertionDsigLocation = samlResponse.indexOf("</Signature>", assertionLocation) + 12;
@@ -155,7 +156,7 @@ public class SamlResponse {
 
 				// Same as above.  The signature in the overall document is supposed to be located between the document Issuer and the Status.
 				// Anyone wants to do this better with the signing context or document dom, knock yourself out.
-				samlResponse = Util.signPost(samlResponse, key, cert, sigalg, false).toString("UTF-8");
+				samlResponse = Util.signPost(samlResponse, key, cert, sigalg, false);
 				int endAssertionLocation = samlResponse.indexOf("</saml:Assertion>") + 17;
 				int dsigLocation = samlResponse.indexOf("<Signature ", endAssertionLocation);
 				int endDsigLocation = samlResponse.indexOf("</Signature>", endAssertionLocation) + 12;
@@ -628,23 +629,26 @@ public class SamlResponse {
 		if (nodes.getLength() != 0) {
 			Map<String, String> nameFormatsByName = new HashMap<>();
 			for (int i = 0; i < nodes.getLength(); i++) {
-				NamedNodeMap attrName = nodes.item(i).getAttributes();
-				String attName = attrName.getNamedItem("Name").getNodeValue();
-				String nameFormat = Optional.ofNullable(attrName.getNamedItem("NameFormat")).map(Node::getNodeValue).orElse(null);
-				String previousNameFormat = nameFormatsByName.get(attName);
-				if (nameFormatsByName.containsKey(attName) && Objects.equals(nameFormat, previousNameFormat)) {
-					throw new ValidationError("Attribute \"" + attName + "\" appears in this SAML assertion twice with the same NameFormat", ValidationError.DUPLICATED_ATTRIBUTE_NAME_FOUND);
-				}
-				if (previousNameFormat == null || Constants.ATTRNAME_FORMAT_URI.equals(nameFormat)) {
-					NodeList childrens = nodes.item(i).getChildNodes();
-					List<String> attrValues = new ArrayList<>();
-					for (int j = 0; j < childrens.getLength(); j++) {
-						if ("AttributeValue".equals(childrens.item(j).getLocalName())) {
-							attrValues.add(childrens.item(j).getTextContent());
-						}
+				NamedNodeMap nodeMap = nodes.item(i).getAttributes();
+				String attName = Optional.ofNullable(nodeMap.getNamedItem("Name")).map(Node::getNodeValue).orElse(null);
+				if (StringUtils.isNotEmpty(attName))
+				{
+					String nameFormat = Optional.ofNullable(nodeMap.getNamedItem("NameFormat")).map(Node::getNodeValue).orElse(null);
+					String previousNameFormat = nameFormatsByName.get(attName);
+					if (nameFormatsByName.containsKey(attName) && Objects.equals(nameFormat, previousNameFormat)) {
+						throw new ValidationError("Attribute \"" + attName + "\" appears in this SAML assertion twice with the same NameFormat", ValidationError.DUPLICATED_ATTRIBUTE_NAME_FOUND);
 					}
-					attributes.put(attName, attrValues);
-					nameFormatsByName.put(attName, nameFormat);
+					if (previousNameFormat == null || Constants.ATTRNAME_FORMAT_URI.equals(nameFormat)) {
+						NodeList childrens = nodes.item(i).getChildNodes();
+						List<String> attrValues = new ArrayList<>();
+						for (int j = 0; j < childrens.getLength(); j++) {
+							if ("AttributeValue".equals(childrens.item(j).getLocalName())) {
+								attrValues.add(childrens.item(j).getTextContent());
+							}
+						}
+						attributes.put(attName, attrValues);
+						nameFormatsByName.put(attName, nameFormat);
+					}
 				}
 			}
 			LOGGER.debug("SAMLResponse has attributes: " + attributes.toString());

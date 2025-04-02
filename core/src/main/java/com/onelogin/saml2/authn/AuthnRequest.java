@@ -135,7 +135,7 @@ public class AuthnRequest {
 				PrivateKey key = settings.getSPkey();
 				X509Certificate cert = settings.getSPcert();
 				String sigalg = settings.getSignatureAlgorithm();
-				authnRequestString = Util.signPost(authnRequestString, key, cert, sigalg, false).toString("UTF-8");
+				authnRequestString = Util.signPost(authnRequestString, key, cert, sigalg, false);
 			} catch (Exception e) {
 				LOGGER.error("AuthnRequest not signed as requested:", e);
 			}

@@ -809,7 +809,7 @@ public final class Util {
         return signature;
 	}
 
-	public static ByteArrayOutputStream signPost(String xml, PrivateKey key, X509Certificate cert, String signAlgorithm, boolean signAssertion) throws Exception {
+	public static String signPost(String xml, PrivateKey key, X509Certificate cert, String signAlgorithm, boolean signAssertion) throws Exception {
 		DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
 		documentFactory.setNamespaceAware(true);
 		final Document doc = documentFactory.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
@@ -836,9 +836,11 @@ public final class Util {
 		javax.xml.crypto.dsig.XMLSignature signature = fac.newXMLSignature(si, ki);
 		signature.sign(dsc);
 
-		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		outputStream.write(Canonicalizer.getInstance(Constants.C14N_WC).canonicalizeSubtree(doc));
-		return outputStream;
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream())
+		{
+			Canonicalizer.getInstance(Constants.C14N_WC).canonicalizeSubtree(doc, outputStream);
+			return outputStream.toString("UTF-8");
+		}
 	}
 	/**
 	 * Converts Signature algorithm method name
