@@ -263,7 +263,8 @@ public class Auth {
 
 		AuthnRequest authnRequest = new AuthnRequest(settings, forceAuthn, isPassive, setNameIdPolicy);
 
-		String samlRequest = authnRequest.getEncodedAuthnRequest();
+		boolean isPostBinding = Constants.BINDING_HTTP_POST.equals(settings.getIdpSingleSignOnServiceBinding());
+		String samlRequest = authnRequest.getEncodedAuthnRequest(isPostBinding ? false : null);
 		
 		parameters.put("SAMLRequest", samlRequest);
 
@@ -271,7 +272,6 @@ public class Auth {
 			parameters.put("RelayState", relayState);
 		}
 
-		boolean isPostBinding = Constants.BINDING_HTTP_POST.equals(settings.getIdpSingleSignOnServiceBinding());
 		if (settings.getAuthnRequestsSigned() && !isPostBinding) {
 			String sigAlg = settings.getSignatureAlgorithm();
 			String signature = this.buildRequestSignature(samlRequest, relayState, sigAlg);
